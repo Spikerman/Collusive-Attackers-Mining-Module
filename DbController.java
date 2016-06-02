@@ -1,6 +1,5 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 
 /**
  * Created by chenhao on 3/24/16.
@@ -10,7 +9,6 @@ public class DbController {
     public static final String name = "com.mysql.jdbc.Driver";
     public static final String user = "root";
     public static final String password = "root";
-
 
     public Connection connection = null;
 
@@ -30,7 +28,6 @@ public class DbController {
 
         DbController dbController = new DbController();
     }
-
 
 
 }

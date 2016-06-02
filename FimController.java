@@ -224,9 +224,9 @@ public class FimController {
         ResultSet rs;
         try {
             statement = dbController.connection.createStatement();
-            System.out.println("start cluster data fetch...");
+            System.out.println(" start cluster data fetch...");
             rs = statement.executeQuery(selectClusterSql);
-            System.out.println("end cluster data fetch...");
+            System.out.println(" end cluster data fetch...");
             String appId;
             int groupId;
             while (rs.next()) {

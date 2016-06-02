@@ -1,4 +1,3 @@
-
 /* This file is copyright (c) 2008-2013 Philippe Fournier-Viger
 *
 * This file is part of the SPMF DATA MINING SOFTWARE
@@ -15,70 +14,61 @@
 * You should have received a copy of the GNU General Public License along with
 * SPMF. If not, see <http://www.gnu.org/licenses/>.
 */
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
+import java.io.*;
+import java.util.*;
 
 
 /**
  * This is an optimized implementation of the Apriori algorithm that uses binary search to
  * check if subsets of a candidate are frequent and other optimizations.
- *  <br/><br/>
- *
+ * <br/><br/>
+ * <p>
  * The apriori algorithm is described  in :
  * <br/><br/>
- *
+ * <p>
  * Agrawal R, Srikant R. "Fast Algorithms for Mining Association Rules", VLDB.
  * Sep 12-15 1994, Chile, 487-99,
  * <br/><br/>
- *
+ * <p>
  * The Apriori algorithm finds all the frequents itemsets and their support in a
  * transaction database provided by the user.
  * <br/><br/>
- *
+ * <p>
  * This is an optimized version that saves the result to a file
  * or keep it into memory if no output path is provided
  * by the user to the runAlgorithm() method.
  *
+ * @author Philippe Fournier-Viger
  * @see Itemset
  * @see Itemsets
- * @author Philippe Fournier-Viger
  */
 public class AlgoApriori {
 
+    public int maxReviewAppSize;
+    public int userGroupSizeWithMaxReiveApp;
+    public int absoluteMinUserGroupSize;
+    public int maxUserGroupSize;
+    public int appNumWithMaxUserGroup;
+    public Set<String> userSet = new HashSet<>();
     // the current level k in the breadth-first search
     protected int k;
-
     // variables for statistics
-    protected int totalCandidateCount = 0; // number of candidate generated during last execution
+    public int totalCandidateCount = 0; // number of candidate generated during last execution
     protected long startTimestamp; // start time of last execution
     protected long endTimestamp; // end time of last execution
-    private int itemsetCount;  // itemset found during last execution
-    private int databaseSize;
-
-    // the minimum support set by the user
-    private int minsupRelative;
-
-    // A memory representation of the database.
-    // Each position in the list represents a transaction
-    private List<int[]> database = null;
-
     // The  patterns that are found
     // (if the user want to keep them into memory)
     protected Itemsets patterns = null;
-
     // object to write the output file (if the user wants to write to a file)
     BufferedWriter writer = null;
+    private int itemsetCount;  // itemset found during last execution
+    private int databaseSize;
+    // the minimum support set by the user
+    private int minSup;
+    // A memory representation of the database.
+    // Each position in the list represents a transaction
+    private List<int[]> database = null;
 
     /**
      * Default constructor
@@ -89,7 +79,8 @@ public class AlgoApriori {
 
     /**
      * Method to run the algorithm
-     * @param minsup  a minimum support value as a percentage
+     *
+     * @param minReviewAppNum a minimum support value as a percentage
      * @param input  the path of an input file
      * @param output the path of an input if the result should be saved to a file. If null,
      *               the result will be kept into memory and this
@@ -98,13 +89,13 @@ public class AlgoApriori {
      */
 
 
-    public Itemsets runAlgorithm(double minsup, String input, String output) throws IOException {
+    public Itemsets runAlgorithm( String input, String output,double minReviewAppNum, int minGroupSize) throws IOException {
 
         // if the user want to keep the result into memory
-        if(output == null){
+        if (output == null) {
             writer = null;
-            patterns =  new Itemsets("FREQUENT ITEMSETS");
-        }else{ // if the user want to save the result to a file
+            patterns = new Itemsets("FREQUENT ITEMSETS");
+        } else { // if the user want to save the result to a file
             patterns = null;
             writer = new BufferedWriter(new FileWriter(output));
         }
@@ -147,7 +138,7 @@ public class AlgoApriori {
             int transaction[] = new int[lineSplited.length];
 
             // for each item in this line (transaction)
-            for (int i=0; i< lineSplited.length; i++) {
+            for (int i = 0; i < lineSplited.length; i++) {
                 // transform this item from a string to an integer
                 Integer item = Integer.parseInt(lineSplited[i]);
                 // store the item in the memory representation of the database
@@ -170,61 +161,58 @@ public class AlgoApriori {
 
         // conver the minimum support as a percentage to a
         // relative minimum support as an integer
-        this.minsupRelative = (int) Math.ceil(minsup * databaseSize);
+        this.minSup = (int) minReviewAppNum;
 
-        // we start looking for itemset of size 1
-        k = 1;
 
-        // We add all frequent items to the set of candidate of size 1
-        List<Integer> frequent1 = new ArrayList<Integer>();
-        for(Entry<Integer, Integer> entry : mapItemCount.entrySet()){
-            if(entry.getValue() >= minsupRelative){
-                frequent1.add(entry.getKey());
-                saveItemsetToFile(entry.getKey(), entry.getValue());
-            }
-        }
-        mapItemCount = null;
-
-        // We sort the list of candidates by lexical order
-        // (Apriori need to use a total order otherwise it does not work)
-        Collections.sort(frequent1, new Comparator<Integer>() {
-            public int compare(Integer o1, Integer o2) {
-                return o1 - o2;
-            }
-        });
-
-        // If no frequent item, the algorithm stops!
-        if(frequent1.size() == 0){
-            // close the output file if we used it
-            if(writer != null){
-                writer.close();
-            }
-            return patterns;
-        }
-
-        // add the frequent items of size 1 to the total number of candidates
-        totalCandidateCount += frequent1.size();
+//        // we start looking for itemset of minGroupSize
+//        k = minGroupSize;
+//
+//        // We add all frequent items to the set of candidate of size 1
+//        List<Integer> frequent1 = new ArrayList<Integer>();
+//        for (Map.Entry<Integer, Integer> entry : mapItemCount.entrySet()) {
+//            if (entry.getValue() >= minSup) {
+//                frequent1.add(entry.getKey());
+//                saveItemsetToFile(entry.getKey(), entry.getValue());
+//            }
+//        }
+//        mapItemCount = null;
+//
+//        // We sort the list of candidates by lexical order
+//        // (Apriori need to use a total order otherwise it does not work)
+//        Collections.sort(frequent1, new Comparator<Integer>() {
+//            public int compare(Integer o1, Integer o2) {
+//                return o1 - o2;
+//            }
+//        });
+//
+//        // If no frequent item, the algorithm stops!
+//        if (frequent1.size() == 0) {
+//            // close the output file if we used it
+//            if (writer != null) {
+//                writer.close();
+//            }
+//            return patterns;
+//        }
+//
+//        // add the frequent items of size 1 to the total number of candidates
+//        totalCandidateCount += frequent1.size();
 
 
         // Now we will perform a loop to find all frequent itemsets of size > 1
         // starting from size k = 2.
         // The loop will stop when no candidates can be generated.
         List<Itemset> level = null;
-        k = 2;
-        do{
+        k = minGroupSize;
+        do {
             // we check the memory usage
             MemoryLogger.getInstance().checkMemory();
 
             // Generate candidates of size K
             List<Itemset> candidatesK;
 
-            // if we are at level k=2, we use an optimization to generate candidates
-            if(k ==2){
-                candidatesK = generateCandidate2(frequent1);
-            }else{
-                // otherwise we use the regular way to generate candidates
-                candidatesK = generateCandidateSizeK(level);
-            }
+
+            candidatesK = generateCandidateSizeK(level);
+
 
             // we add the number of candidates generated to the total
             totalCandidateCount += candidatesK.size();
@@ -232,27 +220,28 @@ public class AlgoApriori {
             // We scan the database one time to calculate the support
             // of each candidates and keep those with higher suport.
             // For each transaction:
-            for(int[] transaction: database){
+            for (int[] transaction : database) {
                 // NEW OPTIMIZATION 2013: Skip transactions shorter than k!
-                if(transaction.length < k) {
+                if (transaction.length < k) {
 //					System.out.println("test");
                     continue;
                 }
                 // END OF NEW OPTIMIZATION
 
                 // for each candidate:
-                loopCand:	for(Itemset candidate : candidatesK){
+                loopCand:
+                for (Itemset candidate : candidatesK) {
                     // a variable that will be use to check if
                     // all items of candidate are in this transaction
                     int pos = 0;
                     // for each item in this transaction
-                    for(int item: transaction){
+                    for (int item : transaction) {
                         // if the item correspond to the current item of candidate
-                        if(item == candidate.itemset[pos]){
+                        if (item == candidate.itemset[pos]) {
                             // we will try to find the next item of candidate next
                             pos++;
                             // if we found all items of candidate in this transaction
-                            if(pos == candidate.itemset.length){
+                            if (pos == candidate.itemset.length) {
                                 // we increase the support of this candidate
                                 candidate.support++;
                                 continue loopCand;
@@ -260,7 +249,7 @@ public class AlgoApriori {
                             // Because of lexical order, we don't need to
                             // continue scanning the transaction if the current item
                             // is larger than the one that we search  in candidate.
-                        }else if(item > candidate.itemset[pos]){
+                        } else if (item > candidate.itemset[pos]) {
                             continue loopCand;
                         }
 
@@ -273,7 +262,7 @@ public class AlgoApriori {
             level = new ArrayList<Itemset>();
             for (Itemset candidate : candidatesK) {
                 // if the support is > minsup
-                if (candidate.getAbsoluteSupport() >= minsupRelative) {
+                if (candidate.getAbsoluteSupport() >= minSup) {
                     // add the candidate
                     level.add(candidate);
                     // the itemset is frequent so save it into results
@@ -282,7 +271,7 @@ public class AlgoApriori {
             }
             // we will generate larger itemsets next.
             k++;
-        }while(level.isEmpty() == false);
+        } while (level.isEmpty() == false);
 
         // record end time
         endTimestamp = System.currentTimeMillis();
@@ -290,7 +279,7 @@ public class AlgoApriori {
         MemoryLogger.getInstance().checkMemory();
 
         // close the output file if the result was saved to a file.
-        if(writer != null){
+        if (writer != null) {
             writer.close();
         }
 
@@ -299,6 +288,7 @@ public class AlgoApriori {
 
     /**
      * Return the number of transactions in the last database read by the algorithm.
+     *
      * @return the number of transactions.
      */
     public int getDatabaseSize() {
@@ -308,7 +298,8 @@ public class AlgoApriori {
     /**
      * This method generates candidates itemsets of size 2 based on
      * itemsets of size 1.
-     * @param frequent1  the list of frequent itemsets of size 1.
+     *
+     * @param frequent1 the list of frequent itemsets of size 1.
      * @return a List of Itemset that are the candidates of size 2.
      */
     private List<Itemset> generateCandidate2(List<Integer> frequent1) {
@@ -321,7 +312,7 @@ public class AlgoApriori {
                 Integer item2 = frequent1.get(j);
 
                 // Create a new candidate by combining itemset1 and itemset2
-                candidates.add(new Itemset(new int []{item1, item2}));
+                candidates.add(new Itemset(new int[]{item1, item2}));
             }
         }
         return candidates;
@@ -329,7 +320,8 @@ public class AlgoApriori {
 
     /**
      * Method to generate itemsets of size k from frequent itemsets of size K-1.
-     * @param levelK_1  frequent itemsets of size k-1
+     *
+     * @param levelK_1 frequent itemsets of size k-1
      * @return itemsets of size k
      */
     protected List<Itemset> generateCandidateSizeK(List<Itemset> levelK_1) {
@@ -337,9 +329,11 @@ public class AlgoApriori {
         List<Itemset> candidates = new ArrayList<Itemset>();
 
         // For each itemset I1 and I2 of level k-1
-        loop1: for (int i = 0; i < levelK_1.size(); i++) {
+        loop1:
+        for (int i = 0; i < levelK_1.size(); i++) {
             int[] itemset1 = levelK_1.get(i).itemset;
-            loop2: for (int j = i + 1; j < levelK_1.size(); j++) {
+            loop2:
+            for (int j = i + 1; j < levelK_1.size(); j++) {
                 int[] itemset2 = levelK_1.get(j).itemset;
 
                 // we compare items of itemset1 and itemset2.
@@ -367,9 +361,9 @@ public class AlgoApriori {
                 }
 
                 // Create a new candidate by combining itemset1 and itemset2
-                int newItemset[] = new int[itemset1.length+1];
+                int newItemset[] = new int[itemset1.length + 1];
                 System.arraycopy(itemset1, 0, newItemset, 0, itemset1.length);
-                newItemset[itemset1.length] = itemset2[itemset2.length -1];
+                newItemset[itemset1.length] = itemset2[itemset2.length - 1];
 
                 // The candidate is tested to see if its subsets of size k-1 are
                 // included in
@@ -384,13 +378,14 @@ public class AlgoApriori {
 
     /**
      * Method to check if all the subsets of size k-1 of a candidate of size k are freuqnet
+     *
      * @param candidate a candidate itemset of size k
      * @param levelK_1  the frequent itemsets of size k-1
      * @return true if all the subsets are frequet
      */
     protected boolean allSubsetsOfSizeK_1AreFrequent(int[] candidate, List<Itemset> levelK_1) {
         // generate all subsets by always each item from the candidate, one by one
-        for(int posRemoved=0; posRemoved< candidate.length; posRemoved++){
+        for (int posRemoved = 0; posRemoved < candidate.length; posRemoved++) {
 
             // perform a binary search to check if  the subset appears in  level k-1.
             int first = 0;
@@ -399,24 +394,21 @@ public class AlgoApriori {
             // variable to remember if we found the subset
             boolean found = false;
             // the binary search
-            while( first <= last )
-            {
-                int middle = ( first + last ) >>1 ; // >>1 means to divide by 2
+            while (first <= last) {
+                int middle = (first + last) >> 1; // >>1 means to divide by 2
 
                 int comparison = ArraysAlgos.sameAs(levelK_1.get(middle).getItems(), candidate, posRemoved);
-                if(comparison < 0 ){
+                if (comparison < 0) {
                     first = middle + 1;  //  the itemset compared is larger than the subset according to the lexical order
-                }
-                else if(comparison  > 0 ){
+                } else if (comparison > 0) {
                     last = middle - 1; //  the itemset compared is smaller than the subset  is smaller according to the lexical order
-                }
-                else{
+                } else {
                     found = true; //  we have found it so we stop
                     break;
                 }
             }
 
-            if(found == false){  // if we did not find it, that means that candidate is not a frequent itemset because
+            if (found == false) {  // if we did not find it, that means that candidate is not a frequent itemset because
                 // at least one of its subsets does not appear in level k-1.
                 return false;
             }
@@ -426,15 +418,43 @@ public class AlgoApriori {
 
     void saveItemset(Itemset itemset) throws IOException {
         itemsetCount++;
+        int[] itemSet = itemset.itemset;
+        int itemsetLength = itemSet.length;
 
         // if the result should be saved to a file
-        if(writer != null){
+        if (writer != null) {
             writer.write(itemset.toString() + " #SUP: "
                     + itemset.getAbsoluteSupport());
             writer.newLine();
         }// otherwise the result is kept into memory
-        else{
-            patterns.addItemset(itemset, itemset.size());
+        else {
+            //patterns.addItemset(itemset, itemset.size());
+
+            int support = itemset.getAbsoluteSupport();
+            for (int i = 0; i < itemsetLength; i++) {
+                userSet.add(String.valueOf(itemSet[i]));
+            }
+
+
+            //get the max support num
+            if (support >= maxReviewAppSize) {
+                maxReviewAppSize = support;
+                if (itemsetLength > userGroupSizeWithMaxReiveApp)
+                    userGroupSizeWithMaxReiveApp = itemsetLength;
+            }
+            //get the mini user group size
+            if (itemsetLength < absoluteMinUserGroupSize) {
+                absoluteMinUserGroupSize = itemsetLength;
+
+            }
+            //get the max user group size
+            if (itemsetLength >= maxUserGroupSize) {
+                maxUserGroupSize = itemsetLength;
+                if (support > appNumWithMaxUserGroup)
+                    appNumWithMaxUserGroup = support;
+            }
+
+
         }
     }
 
@@ -442,11 +462,11 @@ public class AlgoApriori {
         itemsetCount++;
 
         // if the result should be saved to a file
-        if(writer != null){
+        if (writer != null) {
             writer.write(item + " #SUP: " + support);
             writer.newLine();
         }// otherwise the result is kept into memory
-        else{
+        else {
             Itemset itemset = new Itemset(item);
             itemset.setAbsoluteSupport(support);
             patterns.addItemset(itemset, 1);

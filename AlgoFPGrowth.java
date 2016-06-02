@@ -44,6 +44,15 @@ public class AlgoFPGrowth {
     final int BUFFERS_SIZE = 2000;
     // parameter
     public int minSupportRelative;// the relative minimum support
+
+    public int maxReviewAppSize = 0;
+    public int userGroupSizeWithMaxReiveApp = 0;//评论数量最多时的最大用户组
+    public int maxUserGroupSize = 0;
+    public int appNumWithMaxUserGroup = 0;//最大用户组时的评价app数
+    public int absoluteMinUserGroupSize = Integer.MAX_VALUE;
+    public Set<String> userSet = new HashSet<>();
+
+
     // The  patterns that are found
     // (if the user want to keep them into memory)
     protected Itemsets patterns = null;
@@ -52,7 +61,7 @@ public class AlgoFPGrowth {
     private long startTimestamp; // start time of the latest execution
     private long endTime; // end time of the latest execution
     private int transactionCount = 0; // transaction count in the database
-    private int itemsetCount; // number of freq. itemsets found
+    private long itemsetCount; // number of freq. itemsets found
     // buffer for storing the current itemset that is mined when performing mining
     // the idea is to always reuse the same buffer to reduce memory usage.
     private int[] itemsetBuffer = null;
@@ -69,6 +78,10 @@ public class AlgoFPGrowth {
      */
     public AlgoFPGrowth() {
 
+    }
+
+    public long getItemsetCount() {
+        return itemsetCount;
     }
 
     public Itemsets getPatterns() {
@@ -431,7 +444,6 @@ public class AlgoFPGrowth {
         // increase the number of itemsets found for statistics purpose
         itemsetCount++;
 
-
         // if the result should be saved to a file
         if (writer != null) {
             // copy the itemset in the output buffer and sort items
@@ -467,15 +479,39 @@ public class AlgoFPGrowth {
         else {
             // create an object Itemset and add it to the set of patterns
             // found.
-            int[] itemsetArray = new int[itemsetLength];
-            System.arraycopy(itemset, 0, itemsetArray, 0, itemsetLength);
+            //int[] itemsetArray = new int[itemsetLength];
+            //System.arraycopy(itemset, 0, itemsetArray, 0, itemsetLength);
 
             // sort the itemset so that it is sorted according to lexical ordering before we show it to the user
-            Arrays.sort(itemsetArray);
+            //Arrays.sort(itemsetArray);
 
-            Itemset itemsetObj = new Itemset(itemsetArray);
-            itemsetObj.setAbsoluteSupport(support);
-            patterns.addItemset(itemsetObj, itemsetLength);
+            for (int i = 0; i < itemsetLength; i++) {
+                userSet.add(String.valueOf(itemset[i]));
+            }
+
+
+            //get the max support num
+            if (support >= maxReviewAppSize) {
+                maxReviewAppSize = support;
+                if (itemsetLength > userGroupSizeWithMaxReiveApp)
+                    userGroupSizeWithMaxReiveApp = itemsetLength;
+            }
+            //get the mini user group size
+            if (itemsetLength < absoluteMinUserGroupSize) {
+                absoluteMinUserGroupSize = itemsetLength;
+
+            }
+            //get the max user group size
+            if (itemsetLength >= maxUserGroupSize) {
+                maxUserGroupSize = itemsetLength;
+                if (support > appNumWithMaxUserGroup)
+                    appNumWithMaxUserGroup = support;
+            }
+            //Itemset itemsetObj = new Itemset(itemsetArray);
+            //itemsetObj.setAbsoluteSupport(support);
+            //patterns.addItemset(itemsetObj, itemsetLength);
+
+
         }
     }
 
