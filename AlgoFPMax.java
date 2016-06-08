@@ -59,16 +59,18 @@ public class AlgoFPMax {
     public Set<String> userSet = new HashSet<>();
     public int miniUserGroupSize;
     // parameter
-    public int minSupportRelative;// the relative minimum support
+    public int mininumSupport;// the relative minimum support
     // This is the MFI tree for storing maximal itemsets
     public MFITree mfiTree = null;
     public int itemsetCount; // number of freq. itemsets found
     public double averageItemSize = 0;
     public Map<Integer, Set<Set<String>>> itemsetMap = new HashMap<>();
+    public Set<String> coverAppSet = new HashSet<>();
     // The  patterns that are found
     // (if the user want to keep them into memory)
     protected Itemsets patterns = null;
     BufferedWriter writer = null; // object to write the output file
+    BufferedWriter fimWriter = null;
     DbController dbController;
     // for statistics
     private long startTimestamp; // start time of the latest execution
@@ -116,7 +118,7 @@ public class AlgoFPMax {
      * @return the result if no output file path is provided.
      * @throws IOException exception if error reading or writing files
      */
-    public Itemsets runAlgorithm(String input, String output, double miniReviewApp, int miniUserGroupSize) throws FileNotFoundException, IOException {
+    public Itemsets runAlgorithm(String input, String output, int clusterId, double miniReviewApp, int miniUserGroupSize) throws FileNotFoundException, IOException {
 
 
         this.miniUserGroupSize = miniUserGroupSize;
@@ -139,6 +141,12 @@ public class AlgoFPMax {
             writer = new BufferedWriter(new FileWriter(output));
         }
 
+        // set output file
+        String fileName = "Cluster%dSupport%d.txt";
+
+        fileName = String.format(fileName, clusterId, (int)miniReviewApp);
+        fimWriter = new BufferedWriter(new FileWriter(fileName));
+
         // (1) PREPROCESSING: Initial database scan to determine the frequency of each item
         // The frequency is stored in a map:
         //    key: item   value: support
@@ -146,7 +154,7 @@ public class AlgoFPMax {
 
         // convert the minimum support as percentage to a
         // relative minimum support
-        this.minSupportRelative = (int) miniReviewApp;
+        this.mininumSupport = (int) miniReviewApp;
 
 
         // Create the MFI Tree
@@ -177,7 +185,7 @@ public class AlgoFPMax {
             for (String itemString : lineSplited) {
                 Integer item = Integer.parseInt(itemString);
                 // only add items that have the minimum support
-                if (originalMapSupport.get(item) >= minSupportRelative) {
+                if (originalMapSupport.get(item) >= mininumSupport) {
                     transaction.add(item);
                 }
             }
@@ -209,6 +217,8 @@ public class AlgoFPMax {
         if (writer != null) {
             writer.close();
         }
+
+        fimWriter.close();
         // record the execution end time
         endTime = System.currentTimeMillis();
 
@@ -273,7 +283,7 @@ public class AlgoFPMax {
         }
 
         // Case 1: the FPtree contains a single path
-        if (singlePath && singlePathSupport >= minSupportRelative) {
+        if (singlePath && singlePathSupport >= mininumSupport) {
             // We save the path, because it is a maximal itemset
             saveItemset(itemsetBuffer, position, singlePathSupport);
         } else {
@@ -352,7 +362,7 @@ public class AlgoFPMax {
                 // for each item
                 for (Entry<Integer, Integer> entry : mapSupportBeta.entrySet()) {
                     // if the item is frequent
-                    if (entry.getValue() >= minSupportRelative) {
+                    if (entry.getValue() >= mininumSupport) {
                         headWithP.add(entry.getKey());
                     }
                 }
@@ -378,7 +388,7 @@ public class AlgoFPMax {
                     FPTree treeBeta = new FPTree();
                     // Add each prefixpath in the FP-tree.
                     for (List<FPNode> prefixPath : prefixPaths) {
-                        treeBeta.addPrefixPath(prefixPath, mapSupportBeta, minSupportRelative);
+                        treeBeta.addPrefixPath(prefixPath, mapSupportBeta, mininumSupport);
                     }
                     // Mine recursively the Beta tree if the root has child(s)
                     if (treeBeta.root.childs.size() > 0) {
@@ -462,15 +472,30 @@ public class AlgoFPMax {
 
             // sort the itemset so that it is sorted according to lexical ordering before we show it to the user
             //Arrays.sort(itemsetCopy);
-
             if (itemsetLength >= miniUserGroupSize) {
+
+                StringBuilder buffer = new StringBuilder();
+
                 Set<String> item = new HashSet<>();
                 for (int i = 0; i < itemsetLength; i++) {
                     userSet.add(String.valueOf(itemset[i]));
                     item.add(String.valueOf(itemset[i]));
+                    buffer.append(itemset[i]);
+                    buffer.append(' ');
                 }
 
-                analysisSupportApp(item);
+                buffer.append("|");
+                Set<String> commonApp = analysisSupportApp(item);
+
+                for (String appId : commonApp) {
+                    buffer.append(appId);
+                    buffer.append(' ');
+                }
+
+                fimWriter.write(buffer.toString());
+                fimWriter.newLine();
+                fimWriter.flush();
+
                 System.out.println(" user group size : " + item.size());
 
                 if (itemsetMap.containsKey(support)) {
@@ -481,22 +506,7 @@ public class AlgoFPMax {
                     itemsetMap.put(support, newValue);
                 }
 
-//                //get the max support num
-//                if (support >= maxReviewAppSize) {
-//                    maxReviewAppSize = support;
-//                    if (itemsetLength > userGroupSizeWithMaxReiveApp)
-//                        userGroupSizeWithMaxReiveApp = itemsetLength;
-//                }
-//                //get the mini user group size
-//                if (itemsetLength < absoluteMinUserGroupSize) {
-//                    absoluteMinUserGroupSize = itemsetLength;
-//                }
-//                //get the max user group size
-//                if (itemsetLength >= maxUserGroupSize) {
-//                    maxUserGroupSize = itemsetLength;
-//                    if (support > appNumWithMaxUserGroup)
-//                        appNumWithMaxUserGroup = support;
-//                }
+//
             }
 
 //            Itemset itemsetObj = new Itemset(itemsetCopy);
@@ -526,7 +536,7 @@ public class AlgoFPMax {
 
     }
 
-    public void analysisSupportApp(Set<String> userSet) {
+    public Set<String> analysisSupportApp(Set<String> userSet) {
         Statement statement;
         ResultSet rs;
         Set<String> corateAppSet = new HashSet<>();
@@ -559,13 +569,14 @@ public class AlgoFPMax {
             }
         }
 
-        System.out.print(" 共同评价的APP数 : " + corateAppSet.size() + "  ");
         Set<String> commonApp = Sets.intersection(candidateCluster, corateAppSet);
-        System.out.print(" 占据本cluster的APP数 : " + commonApp.size() + "  ");
-
+        System.out.print(" co-review app num : " + commonApp.size() + "  ");
+        coverAppSet.addAll(commonApp);
         for (String appId : commonApp) {
             System.out.print(appId + "  ");
         }
+
+        return commonApp;
     }
 
     private String sqlGenerateForReview(Set<String> userSet) {

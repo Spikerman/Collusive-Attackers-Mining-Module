@@ -1,5 +1,7 @@
 import com.google.common.collect.Sets;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -10,29 +12,41 @@ import java.util.*;
  */
 public class Result {
 
-    public Map<String, Set<String>> userAppMap = new HashMap<>();
+    public int ccMapSize = 0;
     AlgoFPGrowth algoFPGrowth = new AlgoFPGrowth();
     AlgoApriori algoApriori = new AlgoApriori();
     DbController dbController = new DbController();
     FimController fimController;
-
-
     Set<String> userSet = new HashSet<>();
     Set<String> testAppSet = new HashSet<>();
 
     public Result() {
         System.out.println("=======================  FP-Max STATS =======================");
         fimController = new FimController(dbController);
-        fimController.loadCandidateCluster();
+        fimController.loadCCMapFromDb();
+        ccMapSize = fimController.candidateClusterMap.size();
     }
 
-    public static void main(String args[]) {
 
-        int clusterId = 7;
+    public static void main(String args[]) {
+        int clusterId = 4;
+        int support = 5;
+        boolean readFromTxt = true;
+
         Result result = new Result();
-        String filename = "source/result%d.txt";
+        String filename = "sourceX/result%d.txt";
         filename = String.format(filename, clusterId);
-        result.startMFIM(filename, clusterId, 5, 20);
+
+        if (readFromTxt) {
+            try {
+                result.analysisMFIMFromFile(clusterId, support);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            result.startMFIM(filename, clusterId, support, 20);
+        }
+
 
     }
 
@@ -82,7 +96,7 @@ public class Result {
         int commonAppSize = commonAppResult(clusterId);
         int userCount = userSet.size();
 
-        double appPercentage = (double) commonAppSize / (double) fimController.appGroupMap.get(clusterId).size();
+        double appPercentage = (double) commonAppSize / (double) fimController.candidateClusterMap.get(clusterId).size();
         System.out.println("cluster id: " + clusterId + " itemset count: " + itemsetCount + "| user count: " + userCount + "| cover app count: " + commonAppSize
                 + "| cover app percentage: " + appPercentage);
 
@@ -125,7 +139,7 @@ public class Result {
         int commonAppSize = commonAppResult(clusterId);
         int userCount = userSet.size();
 
-        double appPercentage = (double) commonAppSize / (double) fimController.appGroupMap.get(clusterId).size();
+        double appPercentage = (double) commonAppSize / (double) fimController.candidateClusterMap.get(clusterId).size();
         System.out.println("cluster id: " + clusterId + " itemset count: " + itemsetCount + "| user count: " + userCount + "| cover app count: " + commonAppSize
                 + "| cover app percentage: " + appPercentage);
         System.out.println("minimum group size: " + absoluteMinUserGroupSize + "| max group size " + maxUserGroupSize + " with app num: " + appNumWithMaxUserGroup);
@@ -141,39 +155,196 @@ public class Result {
 
     public void startMFIM(String input, int clusterId, int minAppNum, int minUserGroupSize) {
         userSet.clear();
-        AlgoFPMax algoFPMax = new AlgoFPMax(dbController, fimController.appGroupMap.get(clusterId));
+        AlgoFPMax algoFPMax = new AlgoFPMax(dbController, fimController.candidateClusterMap.get(clusterId));
         try {
-            algoFPMax.runAlgorithm(input, null, minAppNum, minUserGroupSize);
+            algoFPMax.runAlgorithm(input, null, clusterId, minAppNum, minUserGroupSize);
             algoFPMax.printStats();
         } catch (Exception e) {
             e.printStackTrace();
         }
-//        itemsetCount = algoFPMax.itemsetCount;
-//        maxReviewAppSize = algoFPMax.maxReviewAppSize;
-//        maxUserGroupSize = algoFPMax.maxUserGroupSize;
-//        userGroupSizeWithMaxReiveApp = algoFPMax.userGroupSizeWithMaxReiveApp;
-//        appNumWithMaxUserGroup = algoFPMax.appNumWithMaxUserGroup;
 
         Map itemsetMap = algoFPMax.itemsetMap;
         userSet = algoFPMax.userSet;
-        int commonAppSize = commonAppResult(clusterId);
         int userCount = userSet.size();
-        double appPercentage = (double) commonAppSize / (double) fimController.appGroupMap.get(clusterId).size();
-
+        Set coverAppSet = algoFPMax.coverAppSet;
+        int commonAppSize = coverAppSet.size();
+        double appPercentage = (double) commonAppSize / (double) fimController.candidateClusterMap.get(clusterId).size();
 
         System.out.println(" cluster id: " + clusterId + "| total user count : " + userCount + "| cover app count : " + commonAppSize
                 + "| cover app percentage : " + appPercentage);
+
         itemsetAnalysis(itemsetMap);
         System.out.println("===================================================");
 
-//        System.out.println("minimum group size: " + absoluteMinUserGroupSize + "| max group size " + maxUserGroupSize + " with app num: " + appNumWithMaxUserGroup);
-//        System.out.println("max co-review app amount: " + maxReviewAppSize + " with user group size: " + userGroupSizeWithMaxReiveApp);
 
         System.out.println();
         System.out.println();
         System.out.println();
         System.out.println();
     }
+
+    public void analysisMFIMFromFile(int clusterId, int support) throws Exception {
+
+        userSet.clear();
+        double avgItemsetSize = 0;
+        int totalItemsetSize = 0;
+        int maxItemsetSize = 0;
+        int itemsetCount = 0;
+        int coreviewAppNum = 0;
+
+        Set<String> coverAppSet = new HashSet<>();
+
+        String fileName = "Cluster%dSupport%d.txt";
+        fileName = String.format(fileName, clusterId, support);
+
+        BufferedReader reader = new BufferedReader(new FileReader(fileName));
+        String line;
+        while (((line = reader.readLine()) != null)) {
+
+            String[] userAppSplited = line.split("\\|");
+
+            String userString = userAppSplited[0];
+            String appString = userAppSplited[1];
+
+            String[] userIdArray = userString.split(" ");
+            String[] appIdArray = appString.split(" ");
+
+            for (String userId : userIdArray) {
+                userSet.add(userId);
+            }
+
+            totalItemsetSize += userIdArray.length;
+
+            if (userIdArray.length > maxItemsetSize)
+                maxItemsetSize = userIdArray.length;
+
+
+            for (String appId : appIdArray) {
+                coverAppSet.add(appId);
+            }
+
+//            Set<Date> dateSet = dateAnalysis(userIdArray, appIdArray);
+//            System.out.print("user group size : " + userIdArray.length + " date : ");
+//            for (Date date : dateSet) {
+//                System.out.print(date + " ");
+//            }
+//
+//            System.out.println();
+
+            coreviewAppNum = appIdArray.length;
+            itemsetCount++;
+        }
+
+
+        int coverAppCount = coverAppSet.size();
+        int clusterSize = fimController.candidateClusterMap.get(clusterId).size();
+        double appPercentage = (double) coverAppCount / (double) clusterSize;
+        avgItemsetSize = (double) totalItemsetSize / (double) itemsetCount;
+
+        System.out.println("=============Analysis From Database With" + "Cluster Id: " + clusterId + " =====================");
+        System.out.println("cluster id : " + clusterId);
+
+        System.out.println("co-review app num : " + coreviewAppNum);
+
+
+        System.out.println("itemset count : " + itemsetCount);
+
+        System.out.println("avg user group size : " + avgItemsetSize);
+        System.out.println("max user group size : " + maxItemsetSize);
+
+
+        System.out.println("total user count : " + userSet.size());
+        System.out.println("cover app count : " + coverAppCount);
+
+        System.out.println("cluster size : " + clusterSize);
+        System.out.println("cover app percentage : " + appPercentage);
+        System.out.println("===================================================");
+
+    }
+
+
+    public Set<Date> dateAnalysis(String[] userArray, String[] appArray) {
+        StringBuffer sqlHead = new StringBuffer("SELECT * FROM Data.Review Where userId in ");
+        StringBuffer sqlTail = new StringBuffer("and appId in");
+        StringBuffer sqlTail2 = new StringBuffer("and appId =");
+
+        StringBuffer userString = new StringBuffer("(");
+        StringBuffer appString = new StringBuffer("(");
+
+        Set<Date> dateSet = new TreeSet<>();
+
+        for (int i = 0; i < userArray.length; i++) {
+            if (i != (userArray.length - 1)) {
+                String id = userArray[i].toString();
+                userString.append(id + ",");
+            } else {
+                String id = userArray[i].toString();
+                userString.append(id + ")");
+            }
+        }
+
+
+        for (int i = 0; i < appArray.length; i++) {
+            if (i != (appArray.length - 1)) {
+                String id = appArray[i].toString();
+                appString.append(id + ",");
+            } else {
+                String id = appArray[i].toString();
+                appString.append(id + ")");
+            }
+        }
+
+        StringBuffer sql = sqlHead.append(userString).append(sqlTail2);
+
+        for (int i = 0; i < appArray.length; i++) {
+
+            dateSet.clear();
+
+            String sql2 = sql + appArray[i];
+            Statement statement;
+            ResultSet rs;
+
+            try {
+                statement = dbController.connection.createStatement();
+                rs = statement.executeQuery(sql2.toString());
+                while (rs.next()) {
+                    Date reviewDate = rs.getDate("date");
+                    dateSet.add(reviewDate);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            System.out.println("target app: " + appArray[i] + " user group size : " + userArray.length);
+            System.out.print(" date : ");
+            for (Date date : dateSet) {
+                System.out.print(date + " ");
+            }
+            System.out.println();
+            System.out.println("date size : " + dateSet.size());
+            System.out.println("=================================");
+
+
+        }
+
+//        Statement statement;
+//        ResultSet rs;
+//
+//        try {
+//            statement = dbController.connection.createStatement();
+//            rs = statement.executeQuery(sql.toString());
+//            while (rs.next()) {
+//                Date reviewDate = rs.getDate("date");
+//                dateSet.add(reviewDate);
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+
+
+        return dateSet;
+    }
+
 
     public void itemsetAnalysis(Map<Integer, Set<Set<String>>> itemsetMap) {
         for (Map.Entry entry : itemsetMap.entrySet()) {
@@ -224,7 +395,7 @@ public class Result {
         int commonAppSize = commonAppResult(clusterId);
         int userCount = userSet.size();
 
-        double appPercentage = (double) commonAppSize / (double) fimController.appGroupMap.get(clusterId).size();
+        double appPercentage = (double) commonAppSize / (double) fimController.candidateClusterMap.get(clusterId).size();
         System.out.println("cluster id: " + clusterId + " itemset count: " + itemsetCount + "| user count: " + userCount + "| cover app count: " + commonAppSize
                 + "| cover app percentage: " + appPercentage);
         System.out.println("minimum group size: " + absoluteMinUserGroupSize + "| max group size " + maxUserGroupSize + " with app num: " + appNumWithMaxUserGroup);
@@ -240,7 +411,7 @@ public class Result {
 
     public int commonAppResult(int clutserId) {
 
-        Set<String> clusterAppSet = (Set) fimController.appGroupMap.get(clutserId);
+        Set<String> clusterAppSet = (Set) fimController.candidateClusterMap.get(clutserId);
         buildUserReviewAppSet(userSet);
         Set<String> commonSet = Sets.intersection(clusterAppSet, testAppSet);
         return commonSet.size();

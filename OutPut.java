@@ -11,7 +11,7 @@ public class OutPut {
     public static void main(String args[]) {
         DbController dbController = new DbController();
         FimController fimController = new FimController(dbController);
-        fimController.loadCandidateCluster();
+        fimController.loadCCMapFromDb();
         fimController.buildAppReviewMap(0);
         Map appReviewMap = fimController.appReviewMap;
 
