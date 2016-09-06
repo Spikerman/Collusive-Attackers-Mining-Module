@@ -1,7 +1,9 @@
 import com.google.common.collect.Sets;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -12,6 +14,9 @@ import java.util.*;
  */
 public class Result {
 
+    //存储最后8个cluster里面所有符合条件的app
+    public static Set<String> resultAppSet = new HashSet<>();
+    static BufferedWriter bufferedWriter;
     public int ccMapSize = 0;
     AlgoFPGrowth algoFPGrowth = new AlgoFPGrowth();
     AlgoApriori algoApriori = new AlgoApriori();
@@ -29,25 +34,54 @@ public class Result {
 
 
     public static void main(String args[]) {
-        int clusterId = 4;
+
+        int clusterId = 3;
         int support = 5;
         boolean readFromTxt = true;
-
+        boolean isSingleFile = true;
         Result result = new Result();
         String filename = "sourceX/result%d.txt";
+        String resultFileName = "appList/appList%d.txt";
+        String itemsetAppFileName = "appList/itemsetApp%d.txt";
+
+        itemsetAppFileName = String.format(itemsetAppFileName, support);
+        try {
+            bufferedWriter = new BufferedWriter(new FileWriter(itemsetAppFileName));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         filename = String.format(filename, clusterId);
 
-        if (readFromTxt) {
+        if (isSingleFile) {
+            if (readFromTxt) {
+                try {
+                    result.analysisMFIMFromFile(clusterId, support);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else {
+                result.startMFIM(filename, clusterId, support, 20);
+            }
+        } else {
             try {
-                result.analysisMFIMFromFile(clusterId, support);
+                for (int i = 1; i <= 8; i++) {
+                    result.analysisMFIMFromFile(i, support);
+                }
+                resultFileName = String.format(resultFileName, support);
+                BufferedWriter bw = new BufferedWriter(new FileWriter(resultFileName));
+                for (String appId : resultAppSet) {
+                    bw.write(appId);
+                    bw.newLine();
+                }
+                bw.flush();
+                bw.close();
+                System.out.println("写入ok");
+                System.out.println("总app数" + resultAppSet.size());
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        } else {
-            result.startMFIM(filename, clusterId, support, 20);
         }
-
-
     }
 
     public void computFim(String input, int clusterId, int minAppNum, int minUserGroupSize) {
@@ -218,10 +252,13 @@ public class Result {
             if (userIdArray.length > maxItemsetSize)
                 maxItemsetSize = userIdArray.length;
 
-
             for (String appId : appIdArray) {
+                System.out.print(appId + " ");
+                resultAppSet.add(appId);
                 coverAppSet.add(appId);
             }
+
+            System.out.println();
 
 //            Set<Date> dateSet = dateAnalysis(userIdArray, appIdArray);
 //            System.out.print("user group size : " + userIdArray.length + " date : ");
@@ -241,17 +278,15 @@ public class Result {
         double appPercentage = (double) coverAppCount / (double) clusterSize;
         avgItemsetSize = (double) totalItemsetSize / (double) itemsetCount;
 
-        System.out.println("=============Analysis From Database With" + "Cluster Id: " + clusterId + " =====================");
+        System.out.println("============= Analysis From Database With" + " Cluster Id: " + clusterId + " =====================");
         System.out.println("cluster id : " + clusterId);
 
         System.out.println("co-review app num : " + coreviewAppNum);
-
 
         System.out.println("itemset count : " + itemsetCount);
 
         System.out.println("avg user group size : " + avgItemsetSize);
         System.out.println("max user group size : " + maxItemsetSize);
-
 
         System.out.println("total user count : " + userSet.size());
         System.out.println("cover app count : " + coverAppCount);
