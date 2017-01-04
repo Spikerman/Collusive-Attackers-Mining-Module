@@ -9,17 +9,15 @@ import java.util.TreeSet;
  */
 public class OutPut {
     public static void main(String args[]) {
+        int clusterId = 1;
         DbController dbController = new DbController();
-        FimController fimController = new FimController(dbController);
+        FIMController fimController = new FIMController(dbController);
         fimController.loadCCMapFromDb();
-        fimController.buildAppReviewMap(0);
+        fimController.buildAppReviewMap(clusterId);
         Map appReviewMap = fimController.appReviewMap;
-
         try {
-
             OutPut outPut = new OutPut();
             outPut.BufferedWriterTest(appReviewMap);
-
         } catch (Exception e) {
             e.printStackTrace();
         }

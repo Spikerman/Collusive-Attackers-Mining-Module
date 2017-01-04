@@ -12,72 +12,69 @@ import java.util.*;
 /**
  * Created by chenhao on 5/28/16.
  */
-public class Result {
+public class MFIMResult {
 
-    //存储最后8个cluster里面所有符合条件的app
+    //存储8个cluster 的所有 itemset 中的 app 总和的集合
     public static Set<String> resultAppSet = new HashSet<>();
     static BufferedWriter bufferedWriter;
     public int ccMapSize = 0;
     AlgoFPGrowth algoFPGrowth = new AlgoFPGrowth();
     AlgoApriori algoApriori = new AlgoApriori();
     DbController dbController = new DbController();
-    FimController fimController;
+    FIMController fimController;
     Set<String> userSet = new HashSet<>();
     Set<String> testAppSet = new HashSet<>();
 
-    public Result() {
+    public MFIMResult() {
         System.out.println("=======================  FP-Max STATS =======================");
-        fimController = new FimController(dbController);
+        fimController = new FIMController(dbController);
         fimController.loadCCMapFromDb();
         ccMapSize = fimController.candidateClusterMap.size();
     }
 
 
     public static void main(String args[]) {
-
         int clusterId = 3;
-        int support = 5;
+        int support = 4;
         boolean readFromTxt = true;
-        boolean isSingleFile = true;
-        Result result = new Result();
-        String filename = "sourceX/result%d.txt";
-        String resultFileName = "appList/appList%d.txt";
-        String itemsetAppFileName = "appList/itemsetApp%d.txt";
-
-        itemsetAppFileName = String.format(itemsetAppFileName, support);
-        try {
-            bufferedWriter = new BufferedWriter(new FileWriter(itemsetAppFileName));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        filename = String.format(filename, clusterId);
-
+        boolean isSingleFile = false;
+        MFIMResult result = new MFIMResult();
+        String inputFile = "sourceX/result%d.txt";// resultX 内数据是除去第7个cluster后余下的8个cluster
+        String outPutFile = "appList/appList%d.txt";//输出 resultAppSet 的结果
+        //itemsetAppFileName unused now
+//        String itemsetAppFileName = "appList/itemsetApp%d.txt";
+//        itemsetAppFileName = String.format(itemsetAppFileName, support);
+//        try {
+//            bufferedWriter = new BufferedWriter(new FileWriter(itemsetAppFileName));
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+        inputFile = String.format(inputFile, clusterId);
         if (isSingleFile) {
             if (readFromTxt) {
                 try {
-                    result.analysisMFIMFromFile(clusterId, support);
+                    result.resultAnalysis(clusterId, support);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             } else {
-                result.startMFIM(filename, clusterId, support, 20);
+                result.fimStart(inputFile, clusterId, support, 20);
             }
         } else {
             try {
                 for (int i = 1; i <= 8; i++) {
-                    result.analysisMFIMFromFile(i, support);
+                    result.resultAnalysis(i, support);
                 }
-                resultFileName = String.format(resultFileName, support);
-                BufferedWriter bw = new BufferedWriter(new FileWriter(resultFileName));
-                for (String appId : resultAppSet) {
-                    bw.write(appId);
-                    bw.newLine();
-                }
-                bw.flush();
-                bw.close();
-                System.out.println("写入ok");
-                System.out.println("总app数" + resultAppSet.size());
+//                outPutFile = String.format(outPutFile, support);
+//                BufferedWriter bw = new BufferedWriter(new FileWriter(outPutFile));
+//                for (String appId : resultAppSet) {
+//                    bw.write(appId);
+//                    bw.newLine();
+//                }
+//                bw.flush();
+//                bw.close();
+//                System.out.println("写入ok");
+//                System.out.println("总app数" + resultAppSet.size());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -187,7 +184,8 @@ public class Result {
 
     }
 
-    public void startMFIM(String input, int clusterId, int minAppNum, int minUserGroupSize) {
+    //从数据库中直接读取各 cluster 的数据，然后开始MFIM
+    public void fimStart(String input, int clusterId, int minAppNum, int minUserGroupSize) {
         userSet.clear();
         AlgoFPMax algoFPMax = new AlgoFPMax(dbController, fimController.candidateClusterMap.get(clusterId));
         try {
@@ -196,29 +194,24 @@ public class Result {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         Map itemsetMap = algoFPMax.itemsetMap;
         userSet = algoFPMax.userSet;
         int userCount = userSet.size();
         Set coverAppSet = algoFPMax.coverAppSet;
         int commonAppSize = coverAppSet.size();
         double appPercentage = (double) commonAppSize / (double) fimController.candidateClusterMap.get(clusterId).size();
-
         System.out.println(" cluster id: " + clusterId + "| total user count : " + userCount + "| cover app count : " + commonAppSize
                 + "| cover app percentage : " + appPercentage);
-
         itemsetAnalysis(itemsetMap);
         System.out.println("===================================================");
-
-
         System.out.println();
         System.out.println();
         System.out.println();
         System.out.println();
     }
 
-    public void analysisMFIMFromFile(int clusterId, int support) throws Exception {
-
+    //从 TXT 文件中读取最终结果，然后对结果进行解析并输出【目前正在用此方法】
+    public void resultAnalysis(int clusterId, int support) throws Exception {
         userSet.clear();
         double avgItemsetSize = 0;
         int totalItemsetSize = 0;
@@ -227,31 +220,22 @@ public class Result {
         int coreviewAppNum = 0;
 
         Set<String> coverAppSet = new HashSet<>();
-
         String fileName = "Cluster%dSupport%d.txt";
         fileName = String.format(fileName, clusterId, support);
-
         BufferedReader reader = new BufferedReader(new FileReader(fileName));
         String line;
         while (((line = reader.readLine()) != null)) {
-
             String[] userAppSplited = line.split("\\|");
-
             String userString = userAppSplited[0];
             String appString = userAppSplited[1];
-
             String[] userIdArray = userString.split(" ");
             String[] appIdArray = appString.split(" ");
-
             for (String userId : userIdArray) {
                 userSet.add(userId);
             }
-
             totalItemsetSize += userIdArray.length;
-
             if (userIdArray.length > maxItemsetSize)
                 maxItemsetSize = userIdArray.length;
-
             for (String appId : appIdArray) {
                 System.out.print(appId + " ");
                 resultAppSet.add(appId);
@@ -294,10 +278,10 @@ public class Result {
         System.out.println("cluster size : " + clusterSize);
         System.out.println("cover app percentage : " + appPercentage);
         System.out.println("===================================================");
-
     }
 
 
+    //分析日期相关
     public Set<Date> dateAnalysis(String[] userArray, String[] appArray) {
         StringBuffer sqlHead = new StringBuffer("SELECT * FROM Data.Review Where userId in ");
         StringBuffer sqlTail = new StringBuffer("and appId in");
@@ -305,7 +289,6 @@ public class Result {
 
         StringBuffer userString = new StringBuffer("(");
         StringBuffer appString = new StringBuffer("(");
-
         Set<Date> dateSet = new TreeSet<>();
 
         for (int i = 0; i < userArray.length; i++) {
@@ -361,7 +344,6 @@ public class Result {
 
 
         }
-
 //        Statement statement;
 //        ResultSet rs;
 //
@@ -375,12 +357,11 @@ public class Result {
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //        }
-
-
         return dateSet;
     }
 
 
+    //todo 函数功能待分析
     public void itemsetAnalysis(Map<Integer, Set<Set<String>>> itemsetMap) {
         for (Map.Entry entry : itemsetMap.entrySet()) {
             int key = (Integer) entry.getKey();
@@ -419,7 +400,6 @@ public class Result {
             e.printStackTrace();
         }
 
-
         maxReviewAppSize = algoApriori.maxReviewAppSize;
         maxUserGroupSize = algoApriori.maxUserGroupSize;
         userGroupSizeWithMaxReiveApp = algoApriori.userGroupSizeWithMaxReiveApp;
@@ -445,7 +425,6 @@ public class Result {
     }
 
     public int commonAppResult(int clutserId) {
-
         Set<String> clusterAppSet = (Set) fimController.candidateClusterMap.get(clutserId);
         buildUserReviewAppSet(userSet);
         Set<String> commonSet = Sets.intersection(clusterAppSet, testAppSet);
@@ -474,7 +453,6 @@ public class Result {
     }
 
     public void buildUserReviewAppSet(Set<String> userSet) {
-
         Statement statement;
         ResultSet rs;
         String sql = sqlGenerateForReview(userSet);

@@ -9,17 +9,16 @@ import java.util.*;
 /**
  * Created by chenhao on 5/20/16.
  */
-public class FimController {
+public class FIMController {
 
-    //db:AppGroup
+    //db: AppGroup
     //key:cluster id
     //value: app id set
     public Map<Integer, Set<String>> candidateClusterMap = new HashMap<>();
-
     public Map<String, TreeSet<String>> appReviewMap = new HashMap<>();
 
     //key: cluster id
-    //value: 对应的TAC内所有刷榜用户评价的app ids
+    //value: 对应的 cluster id 内的所有 APP 下的所有用户评价的 app ids
     public Map<Integer, Set<String>> testAppGroupMap = new HashMap<>();
 
     //key: user id
@@ -27,7 +26,6 @@ public class FimController {
     public Map<String, Set<String>> userAppMap = new HashMap<>();
     public Set<String> userSet = new HashSet<>();
     public PreparedStatement selectRevewSqlStmt;
-
     public PreparedStatement selectRevewForAppStmt;
     DbController dbController;
 
@@ -36,16 +34,13 @@ public class FimController {
     //value: user id set
     Map<Integer, Set<String>> userGroupMap = new TreeMap<>();
     String selectUserSql = "SELECT * FROM Data.user_group;";
-
     String selectClusterSql = "SELECT * FROM Data.CandidateCluster;";
     String selectReviewSql = "SELECT * FROM Data.Review where userId=?; ";
-
     String selectReviewForApp = "SELECT count(*) FROM Data.Review where appId=?";
-
     String testSql = "SELECT group_id, user_id,threshold FROM Data.user_group where cluster_id=2 and threshold=9;";
     Set<String> testSet = new HashSet<>();
 
-    public FimController(DbController dbController) {
+    public FIMController(DbController dbController) {
         this.dbController = dbController;
         try {
             selectRevewSqlStmt = dbController.connection.prepareStatement(selectReviewSql);
@@ -58,7 +53,7 @@ public class FimController {
 
     public static void main(String arge[]) {
         DbController dbController = new DbController();
-        FimController fimController = new FimController(dbController);
+        FIMController fimController = new FIMController(dbController);
         fimController.loadUserGroup();
         fimController.loadCCMapFromDb();
         fimController.countClusterReviewAmount();
@@ -90,13 +85,10 @@ public class FimController {
     public void executeFimTest() {
         Statement statement;
         ResultSet rs;
-
         try {
             statement = dbController.connection.createStatement();
             rs = statement.executeQuery(testSql);
-
             String userId;
-
             while (rs.next()) {
                 userId = rs.getString("user_id");
                 testSet.add(userId);
@@ -108,11 +100,7 @@ public class FimController {
 
         Set<String> appSet;
         Set<String> tmpSet;
-
-
         Object[] array = testSet.toArray();
-
-
         for (int i = 0; i < array.length; i++) {
             String userId = array[i].toString();
             appSet = getReviewApps(userId);
@@ -120,12 +108,10 @@ public class FimController {
                 insertToAppReviewMap(appId, userId);
             }
         }
-
-
     }
 
 
-    //构造user map, key值为对应的组数, value为得到的collusive attackers的集合
+    //构造user map, key值为对应的组数, 结果为得到的collusive attackers的集合
     public void loadUserGroup() {
         Statement statement;
         ResultSet rs;
@@ -134,7 +120,6 @@ public class FimController {
             System.out.println("start user data fetch...");
             rs = statement.executeQuery(selectUserSql);
             System.out.println("end user data fetch...");
-
             int clusterId;
             String userId;
             while (rs.next()) {
@@ -152,9 +137,7 @@ public class FimController {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
         buildUserAppMap();
-
     }
 
     public void buildUserAppMap() {
@@ -166,7 +149,6 @@ public class FimController {
             System.out.println("start user data fetch...");
             rs = statement.executeQuery(sql);
             System.out.println("end user data fetch...");
-
             String userId;
             String appId;
             while (rs.next()) {

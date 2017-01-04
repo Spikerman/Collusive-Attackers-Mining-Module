@@ -6,7 +6,6 @@ public class Client {
         AlgoFPGrowth algoFPGrowth = new AlgoFPGrowth();
         String output = "output.txt";
         String input = "result.txt";
-
         try {
             algoFPGrowth.runAlgorithm(input, output, 5, 20);
             algoFPGrowth.printStats();
