@@ -7,14 +7,15 @@ import java.util.TreeSet;
 /**
  * Created by chenhao on 5/28/16.
  */
+
 public class OutPut {
     public static void main(String args[]) {
         int clusterId = 1;
         DbController dbController = new DbController();
         FIMController fimController = new FIMController(dbController);
-        fimController.loadCCMapFromDb();
+        fimController.loadClusterMapFromDb();
         fimController.buildAppReviewMap(clusterId);
-        Map appReviewMap = fimController.appReviewMap;
+        Map appReviewMap = fimController.appReviewerMap;
         try {
             OutPut outPut = new OutPut();
             outPut.BufferedWriterTest(appReviewMap);
@@ -26,8 +27,8 @@ public class OutPut {
     public void BufferedWriterTest(Map<String, TreeSet<String>> appReviewMap) throws IOException {
         BufferedWriter bw = new BufferedWriter(new FileWriter("result.txt"));
         for (Map.Entry entry : appReviewMap.entrySet()) {
-            TreeSet<String> appIdSet = (TreeSet) entry.getValue();
-            for (String userId : appIdSet) {
+            TreeSet<String> userIdSet = (TreeSet) entry.getValue();
+            for (String userId : userIdSet) {
                 bw.write(userId);
                 bw.write(" ");
             }

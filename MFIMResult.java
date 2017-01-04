@@ -3,7 +3,6 @@ import com.google.common.collect.Sets;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -28,8 +27,8 @@ public class MFIMResult {
     public MFIMResult() {
         System.out.println("=======================  FP-Max STATS =======================");
         fimController = new FIMController(dbController);
-        fimController.loadCCMapFromDb();
-        ccMapSize = fimController.candidateClusterMap.size();
+        fimController.loadClusterMapFromDb();
+        ccMapSize = fimController.appClusterMap.size();
     }
 
 
@@ -81,6 +80,7 @@ public class MFIMResult {
         }
     }
 
+    //unused
     public void computFim(String input, int clusterId, int minAppNum, int minUserGroupSize) {
         int maxReviewAppSize = 0;
         int maxUserGroupSize = 0;
@@ -127,7 +127,7 @@ public class MFIMResult {
         int commonAppSize = commonAppResult(clusterId);
         int userCount = userSet.size();
 
-        double appPercentage = (double) commonAppSize / (double) fimController.candidateClusterMap.get(clusterId).size();
+        double appPercentage = (double) commonAppSize / (double) fimController.appClusterMap.get(clusterId).size();
         System.out.println("cluster id: " + clusterId + " itemset count: " + itemsetCount + "| user count: " + userCount + "| cover app count: " + commonAppSize
                 + "| cover app percentage: " + appPercentage);
 
@@ -140,7 +140,7 @@ public class MFIMResult {
         System.out.println();
         System.out.println();
     }
-
+    //unused
     public void startFIM(String input, int clusterId, int minAppNum, int minUserGroupSize) {
         int maxReviewAppSize = 0;
         int maxUserGroupSize = 0;
@@ -170,7 +170,7 @@ public class MFIMResult {
         int commonAppSize = commonAppResult(clusterId);
         int userCount = userSet.size();
 
-        double appPercentage = (double) commonAppSize / (double) fimController.candidateClusterMap.get(clusterId).size();
+        double appPercentage = (double) commonAppSize / (double) fimController.appClusterMap.get(clusterId).size();
         System.out.println("cluster id: " + clusterId + " itemset count: " + itemsetCount + "| user count: " + userCount + "| cover app count: " + commonAppSize
                 + "| cover app percentage: " + appPercentage);
         System.out.println("minimum group size: " + absoluteMinUserGroupSize + "| max group size " + maxUserGroupSize + " with app num: " + appNumWithMaxUserGroup);
@@ -187,7 +187,7 @@ public class MFIMResult {
     //从数据库中直接读取各 cluster 的数据，然后开始MFIM
     public void fimStart(String input, int clusterId, int minAppNum, int minUserGroupSize) {
         userSet.clear();
-        AlgoFPMax algoFPMax = new AlgoFPMax(dbController, fimController.candidateClusterMap.get(clusterId));
+        AlgoFPMax algoFPMax = new AlgoFPMax(dbController, fimController.appClusterMap.get(clusterId));
         try {
             algoFPMax.runAlgorithm(input, null, clusterId, minAppNum, minUserGroupSize);
             algoFPMax.printStats();
@@ -199,7 +199,7 @@ public class MFIMResult {
         int userCount = userSet.size();
         Set coverAppSet = algoFPMax.coverAppSet;
         int commonAppSize = coverAppSet.size();
-        double appPercentage = (double) commonAppSize / (double) fimController.candidateClusterMap.get(clusterId).size();
+        double appPercentage = (double) commonAppSize / (double) fimController.appClusterMap.get(clusterId).size();
         System.out.println(" cluster id: " + clusterId + "| total user count : " + userCount + "| cover app count : " + commonAppSize
                 + "| cover app percentage : " + appPercentage);
         itemsetAnalysis(itemsetMap);
@@ -258,7 +258,7 @@ public class MFIMResult {
 
 
         int coverAppCount = coverAppSet.size();
-        int clusterSize = fimController.candidateClusterMap.get(clusterId).size();
+        int clusterSize = fimController.appClusterMap.get(clusterId).size();
         double appPercentage = (double) coverAppCount / (double) clusterSize;
         avgItemsetSize = (double) totalItemsetSize / (double) itemsetCount;
 
@@ -286,7 +286,6 @@ public class MFIMResult {
         StringBuffer sqlHead = new StringBuffer("SELECT * FROM Data.Review Where userId in ");
         StringBuffer sqlTail = new StringBuffer("and appId in");
         StringBuffer sqlTail2 = new StringBuffer("and appId =");
-
         StringBuffer userString = new StringBuffer("(");
         StringBuffer appString = new StringBuffer("(");
         Set<Date> dateSet = new TreeSet<>();
@@ -313,15 +312,11 @@ public class MFIMResult {
         }
 
         StringBuffer sql = sqlHead.append(userString).append(sqlTail2);
-
         for (int i = 0; i < appArray.length; i++) {
-
             dateSet.clear();
-
             String sql2 = sql + appArray[i];
             Statement statement;
             ResultSet rs;
-
             try {
                 statement = dbController.connection.createStatement();
                 rs = statement.executeQuery(sql2.toString());
@@ -332,7 +327,6 @@ public class MFIMResult {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
             System.out.println("target app: " + appArray[i] + " user group size : " + userArray.length);
             System.out.print(" date : ");
             for (Date date : dateSet) {
@@ -341,8 +335,6 @@ public class MFIMResult {
             System.out.println();
             System.out.println("date size : " + dateSet.size());
             System.out.println("=================================");
-
-
         }
 //        Statement statement;
 //        ResultSet rs;
@@ -382,6 +374,7 @@ public class MFIMResult {
     }
 
 
+    //unused
     public void startFIMWithApriori(String input, int clusterId, int minAppNum, int minUserGroupSize) {
         int maxReviewAppSize = 0;
         int maxUserGroupSize = 0;
@@ -410,7 +403,7 @@ public class MFIMResult {
         int commonAppSize = commonAppResult(clusterId);
         int userCount = userSet.size();
 
-        double appPercentage = (double) commonAppSize / (double) fimController.candidateClusterMap.get(clusterId).size();
+        double appPercentage = (double) commonAppSize / (double) fimController.appClusterMap.get(clusterId).size();
         System.out.println("cluster id: " + clusterId + " itemset count: " + itemsetCount + "| user count: " + userCount + "| cover app count: " + commonAppSize
                 + "| cover app percentage: " + appPercentage);
         System.out.println("minimum group size: " + absoluteMinUserGroupSize + "| max group size " + maxUserGroupSize + " with app num: " + appNumWithMaxUserGroup);
@@ -425,7 +418,7 @@ public class MFIMResult {
     }
 
     public int commonAppResult(int clutserId) {
-        Set<String> clusterAppSet = (Set) fimController.candidateClusterMap.get(clutserId);
+        Set<String> clusterAppSet = (Set) fimController.appClusterMap.get(clutserId);
         buildUserReviewAppSet(userSet);
         Set<String> commonSet = Sets.intersection(clusterAppSet, testAppSet);
         return commonSet.size();
