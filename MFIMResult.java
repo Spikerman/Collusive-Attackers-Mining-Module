@@ -184,7 +184,7 @@ public class MFIMResult {
 
     }
 
-    //从数据库中直接读取各 cluster 的数据，然后开始MFIM
+    //从数据库中直接读取各 cluster 的数据，然后开始 MFIM
     public void fimStart(String input, int clusterId, int minAppNum, int minUserGroupSize) {
         userSet.clear();
         AlgoFPMax algoFPMax = new AlgoFPMax(dbController, fimController.appClusterMap.get(clusterId));
