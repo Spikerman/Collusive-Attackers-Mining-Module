@@ -46,6 +46,7 @@ public class InstanceGenerator {
 
     //todo 建立HashMap<String,HashMap<Date,Record>>
     public void analysis() {
+
         ResultSet rs;
         try {
             for (String id : appIdSet) {
