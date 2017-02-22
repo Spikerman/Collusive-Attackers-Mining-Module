@@ -8,20 +8,31 @@ import java.util.Set;
  * Created Date: 17/2/21
  */
 public class Instance {
-    public String type;
+    public String label;
     public int rves;
     public int rds;
     public int rfs;
-    String id1;
-    String id2;
+    public int support;
+    String appA;
+    String appB;
 
-    public Instance(String id1, String id2) {
-        this.id1 = id1;
-        this.id2 = id2;
+    public Instance(String appA, String appB) {
+        this.appA = appA;
+        this.appB = appB;
         rves = 0;
         rds = 0;
         rfs = 0;
-        type = "normal";
+        label = "normal";
+    }
+
+    public Instance(String id1, String appB, int support, String label) {
+        this.label = label;
+        this.support = support;
+        this.appA = id1;
+        this.appB = appB;
+        rves = 0;
+        rds = 0;
+        rfs = 0;
     }
 
     public Instance() {
@@ -37,14 +48,14 @@ public class Instance {
     }
 
     public int hashCode() {
-        return (id1.hashCode() + id2.hashCode()) * 37;
+        return (appA.hashCode() + appB.hashCode()) * 37;
     }
 
     public boolean equals(Object obj) {
         if (!(obj instanceof Instance))
             return false;
         Instance instance = (Instance) obj;
-        return (this.id1.equals(instance.id1) && this.id2.equals(instance.id2))
-                || (this.id1.equals(instance.id2) && this.id2.equals(instance.id1));
+        return (this.appA.equals(instance.appA) && this.appB.equals(instance.appB))
+                || (this.appA.equals(instance.appB) && this.appB.equals(instance.appA));
     }
 }
