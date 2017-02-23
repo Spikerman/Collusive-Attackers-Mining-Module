@@ -14,8 +14,9 @@ public class InstanceGenerator {
     private Set<Instance> appPairSet = new HashSet<>();
     private Set<String> appIdSet = new HashSet<>();
     private Map<String, List<AppData>> appMap = new HashMap<>();
-    private Map<String, Map<Date, Double>> rateRecordMap = new HashMap<>();
-    private Map<String, Map<Date, Integer>> reviewRecordMap = new HashMap<>();
+    private Map<String, Map<Date, Double>> rateRecordMap = new HashMap<>();//日期对应评分变化值
+    private Map<String, Map<Date, Integer>> reviewRecordMap = new HashMap<>();//日期对应当日评论数量变化值
+    private Map<String, Map<Date, Integer>> rankingRecordMap = new HashMap<>();
     private Map<String, Double> avgReviewMap = new HashMap<>();
     private MlDbController mlDbController;
 
@@ -26,8 +27,8 @@ public class InstanceGenerator {
     public static void main(String args[]) {
         InstanceGenerator ig = new InstanceGenerator();
         ig.retrieveFromDb();
-        ig.appMapConstruct();
-        ig.rateRecordMapBuilder();
+        ig.appMapBuilder();
+        ig.recordMapBuilder();
         ig.analysis();
         System.out.println();
     }
@@ -54,17 +55,19 @@ public class InstanceGenerator {
     }
 
     //todo 建立HashMap<String,List<AppData>>
-    public void appMapConstruct() {
+    public void appMapBuilder() {
         ResultSet rs;
         try {
             for (String id : appIdSet) {
                 mlDbController.getAppInfoStmt.setString(1, id);
                 rs = mlDbController.getAppInfoStmt.executeQuery();
                 List<AppData> list = new ArrayList<>();
+                Set<Date> dateSet = new HashSet<>();
                 while (rs.next()) {
                     AppData appData = new AppData();
                     appData.appId = rs.getString("appId");
                     appData.rankType = rs.getString("rankType");
+                    appData.rankFloatNum = rs.getInt("rankFloatNum");
                     appData.currentVersion = rs.getString("currentVersion");
                     appData.currentVersionReleaseDate = rs.getString("currentVersionReleaseDate");
                     appData.userRateCountForCur = rs.getInt("userRatingCountForCurrentVersion");
@@ -72,7 +75,20 @@ public class InstanceGenerator {
                     appData.averageUserRating = Double.parseDouble(rs.getString("averageUserRating"));
                     appData.averageUserRatingForCurrentVersion = Double.parseDouble(rs.getString("averageUserRatingForCurrentVersion"));
                     appData.date = DataFormat.timestampToMonthDayYear(rs.getTimestamp("date"));
-                    list.add(appData);
+
+                    if (!dateSet.contains(appData.date)) {
+                        list.add(appData);
+                    } else {
+                        if (!appData.rankType.equals("update")) {
+                            for (int i = 0; i < list.size(); i++) {
+                                if (list.get(i).date.equals(appData.date)) {
+                                    list.remove(i);
+                                }
+                            }
+                            list.add(appData);
+                        }
+                    }
+                    dateSet.add(appData.date);
                 }
                 appMap.put(id, list);
             }
@@ -83,8 +99,8 @@ public class InstanceGenerator {
 
     }
 
-    //todo List中存在多条同一天的记录的处理 --》用Set存储AppData,并对其中的date做 hash 和 equal 处理
-    public void rateRecordMapBuilder() {
+    //todo List中存在多条同一天的记录的处理 --》用 Set 存储AppData,并对其中的 date 做 hash 和 equal 处理
+    public void recordMapBuilder() {
         Iterator iterator = appMap.entrySet().iterator();
         DateComparator dateComparator = new DateComparator();
         while (iterator.hasNext()) {
@@ -92,9 +108,10 @@ public class InstanceGenerator {
             String appId = (String) entry.getKey();
             List<AppData> appList = (List) entry.getValue();
             Collections.sort(appList, dateComparator);
-            HashMap<Date, Double> rateDiffRecordMap = new HashMap<>();
-            HashMap<Date, Integer> reviewDiffRecordMap = new HashMap<>();
-            int totalDiffAmount = 0;
+            Map<Date, Double> rateDiffRecordMap = new TreeMap<>();
+            Map<Date, Integer> reviewDiffRecordMap = new TreeMap<>();
+            Map<Date, Integer> rankingTypeRecordMap = new TreeMap<>();
+            int totalReviewAmount = 0;
             Set<Date> dateSet = new HashSet<>();
             for (int i = 1; i < appList.size(); i++) {
                 dateSet.add(appList.get(i).date);//todo 暂时记录真实的 date 数
@@ -106,16 +123,21 @@ public class InstanceGenerator {
                     reviewDiff = nextDayAppData.userTotalRateCount - curDayAppData.userTotalRateCount;
                 else
                     reviewDiff = 0;
-                totalDiffAmount += reviewDiff;
-
+                totalReviewAmount += reviewDiff;
                 reviewDiffRecordMap.put(nextDayAppData.date, reviewDiff);
                 rateDiffRecordMap.put(nextDayAppData.date, rateDiff);
             }
 
-            double avgNum = (double) totalDiffAmount / (double) dateSet.size();
+            //ranking
+            for (AppData ad : appList) {
+                rankingTypeRecordMap.put(ad.date, ad.rankFloatNum);
+            }
+
+            double avgNum = (double) totalReviewAmount / (double) dateSet.size();
             avgReviewMap.put(appId, avgNum);
             reviewRecordMap.put(appId, reviewDiffRecordMap);
             rateRecordMap.put(appId, rateDiffRecordMap);
+            rankingRecordMap.put(appId, rankingTypeRecordMap);
         }
     }
 
@@ -123,34 +145,50 @@ public class InstanceGenerator {
         for (Instance ins : appPairSet) {
             int rds = 0;
             int rves = 0;
+            int rfs = 0;
             String appA = ins.appA;
             String appB = ins.appB;
-            Map<Date, Double> rateMapA = rateRecordMap.get(appA);
-            Map<Date, Double> rateMapB = rateRecordMap.get(appB);
-            Map<Date, Integer> reviewMapA = reviewRecordMap.get(appA);
-            Map<Date, Integer> reviewMapB = reviewRecordMap.get(appB);
-            Set<Date> dateSetA = rateMapA.keySet();
-            Set<Date> dateSetB = rateMapB.keySet();
+            Map<Date, Double> rateDateMapA = rateRecordMap.get(appA);
+            Map<Date, Double> rateDateMapB = rateRecordMap.get(appB);
+            Map<Date, Integer> reviewDateMapA = reviewRecordMap.get(appA);
+            Map<Date, Integer> reviewDateMapB = reviewRecordMap.get(appB);
+            Map<Date, Integer> rankingDateMapA = rankingRecordMap.get(appA);
+            Map<Date, Integer> rankingDateMapB = rankingRecordMap.get(appB);
+            Set<Date> dateSetA = rateDateMapA.keySet();
+            Set<Date> dateSetB = rateDateMapB.keySet();
             Set<Date> shareDateSet = (Set) Sets.intersection(dateSetA, dateSetB);
             for (Date date : shareDateSet) {
-                Double rateDiffA = rateMapA.get(date);
-                Double rateDiffB = rateMapB.get(date);
-
+                //rating
+                Double rateDiffA = rateDateMapA.get(date);
+                Double rateDiffB = rateDateMapB.get(date);
                 if (rateDiffA * rateDiffB > 0) {
                     rds++;
                 } else {
-                    rds += approxEquals(rateMapA, rateMapB, date);
+                    rds += approxEquals(rateDateMapA, rateDateMapB, date);
                 }
-
-                int reviewDiffA = reviewMapA.get(date);
-                int reviewDiffB = reviewMapB.get(date);
+                //review
+                int reviewDiffA = reviewDateMapA.get(date);
+                int reviewDiffB = reviewDateMapB.get(date);
                 double avgNumA = avgReviewMap.get(appA);
                 double avgNumB = avgReviewMap.get(appB);
                 if (reviewDiffA > avgNumA && reviewDiffB > avgNumB)
                     rves++;
+
             }
-            if (rds != 0 || rves != 0)
-                System.out.println(appA + "  " + appB + "  " + rds + "  " + rves);
+
+            //ranking
+            Set<Date> rdateSetA = rankingDateMapA.keySet();
+            Set<Date> rdateSetB = rankingDateMapB.keySet();
+            Set<Date> shareDateSet2 = (Set) Sets.intersection(rdateSetA, rdateSetB);
+            for (Date date : shareDateSet2) {
+                int rankFloatA = rankingDateMapA.get(date);
+                int rankFloatB = rankingDateMapB.get(date);
+                if (rankFloatA * rankFloatB > 0)
+                    rfs++;
+            }
+
+            if (rds != 0 || rves != 0 || rfs != 0)
+                System.out.println(appA + "  " + appB + "  " + rds + "  " + rves + "  " + rfs);
         }
     }
 
