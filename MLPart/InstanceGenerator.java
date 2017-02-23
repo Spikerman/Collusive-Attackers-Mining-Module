@@ -76,6 +76,8 @@ public class InstanceGenerator {
                     appData.averageUserRatingForCurrentVersion = Double.parseDouble(rs.getString("averageUserRatingForCurrentVersion"));
                     appData.date = DataFormat.timestampToMonthDayYear(rs.getTimestamp("date"));
 
+
+                    //todo 收集数据时 update 部分的筛选与处理有待进一步检查
                     if (!dateSet.contains(appData.date)) {
                         list.add(appData);
                     } else {
@@ -99,7 +101,7 @@ public class InstanceGenerator {
 
     }
 
-    //todo List中存在多条同一天的记录的处理 --》用 Set 存储AppData,并对其中的 date 做 hash 和 equal 处理
+    //
     public void recordMapBuilder() {
         Iterator iterator = appMap.entrySet().iterator();
         DateComparator dateComparator = new DateComparator();
