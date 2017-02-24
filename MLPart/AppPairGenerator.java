@@ -2,8 +2,10 @@ package MLPart;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -13,14 +15,20 @@ import java.util.Set;
 public class AppPairGenerator {
     private Set<Instance> appPairSet = new HashSet<>();
     private MlDbController mlDbController;
+    private Set<Instance> oldPairSet = new HashSet<>();// 存储数据库中已有的记录
+    private Set<String> oldIdSet = new HashSet<>(); // 数据库 apppair 表中已有的 id 记录
+    private Set<String> AppInfoIdSet=new HashSet<>();//从 appinfo 表中读取到的 id 记录集合
 
     public AppPairGenerator() {
         this.mlDbController = new MlDbController();
+        retrieveRecordFromDb();
+        retrieveAppIdFromDb();
     }
 
     public static void main(String args[]) {
         AppPairGenerator apg = new AppPairGenerator();
-        apg.dataReader(1, 4);
+        apg.normalPairBuilder();
+        //apg.dataReader(1, 4);
 
     }
 
@@ -38,7 +46,7 @@ public class AppPairGenerator {
         }
     }
 
-    public AppPairGenerator dataReader(int clusterId, int support) {
+    public void dataReader(int clusterId, int support) {
         String fileName = "Cluster%dSupport%d.txt";
         fileName = String.format(fileName, clusterId, support);
         try {
@@ -58,11 +66,58 @@ public class AppPairGenerator {
             for (Instance i : appPairSet) {
                 exportToDb(i.appA, i.appB, i.support, i.label);
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return this;
+    }
+
+    public void normalPairBuilder() {
+        for (int i = 0; i < 10; i++) {
+            System.out.println(randomPickId());
+        }
+    }
+
+    public void retrieveRecordFromDb() {
+        ResultSet rs;
+        try {
+            rs = mlDbController.getAppPairStmt.executeQuery();
+            while (rs.next()) {
+                Instance i = new Instance();
+                i.appA = rs.getString("appA");
+                i.appB = rs.getString("appB");
+                i.support = rs.getInt("support");
+                i.label = rs.getString("label");
+                oldPairSet.add(i);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("existed pair size: " + oldPairSet.size());
+    }
+
+    public void retrieveAppIdFromDb() {
+        ResultSet rs;
+        try {
+            rs = mlDbController.getAppIdStmt.executeQuery();
+            while (rs.next()) {
+                String id = rs.getString("appId");
+                oldIdSet.add(id);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("符合条件 id 数： " + oldIdSet.size());
+    }
+
+    public String randomPickId() {
+        int item = new Random().nextInt(oldIdSet.size());
+        int i = 0;
+        for (String id : oldIdSet) {
+            if (i == item)
+                return id;
+            i++;
+        }
+        return null;
     }
 
 }

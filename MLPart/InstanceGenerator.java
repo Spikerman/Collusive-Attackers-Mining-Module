@@ -76,7 +76,6 @@ public class InstanceGenerator {
                     appData.averageUserRatingForCurrentVersion = Double.parseDouble(rs.getString("averageUserRatingForCurrentVersion"));
                     appData.date = DataFormat.timestampToMonthDayYear(rs.getTimestamp("date"));
 
-
                     //todo 收集数据时 update 部分的筛选与处理有待进一步检查
                     if (!dateSet.contains(appData.date)) {
                         list.add(appData);
@@ -109,14 +108,14 @@ public class InstanceGenerator {
             Map.Entry entry = (Map.Entry) iterator.next();
             String appId = (String) entry.getKey();
             List<AppData> appList = (List) entry.getValue();
-            Collections.sort(appList, dateComparator);
+            appList.sort(dateComparator);//todo comparator 进行了修改，注意
             Map<Date, Double> rateDiffRecordMap = new TreeMap<>();
             Map<Date, Integer> reviewDiffRecordMap = new TreeMap<>();
             Map<Date, Integer> rankingTypeRecordMap = new TreeMap<>();
             int totalReviewAmount = 0;
             Set<Date> dateSet = new HashSet<>();
             for (int i = 1; i < appList.size(); i++) {
-                dateSet.add(appList.get(i).date);//todo 暂时记录真实的 date 数
+                dateSet.add(appList.get(i).date);// todo 暂时记录真实的 date 数
                 AppData nextDayAppData = appList.get(i);
                 AppData curDayAppData = appList.get(i - 1);
                 double rateDiff = nextDayAppData.getRateDiff(curDayAppData);
@@ -190,7 +189,7 @@ public class InstanceGenerator {
             }
 
             if (rds != 0 || rves != 0 || rfs != 0)
-                System.out.println(appA + "  " + appB + "  " + rds + "  " + rves + "  " + rfs);
+                System.out.println(appA + "  " + appB + "  " + rds + "  " + rves + "  " + rfs + "  " + ins.label);
         }
     }
 

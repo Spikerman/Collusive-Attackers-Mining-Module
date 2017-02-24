@@ -16,10 +16,12 @@ public class MlDbController {
     public PreparedStatement insertAppPairStmt;
     public PreparedStatement getAppPairStmt;
     public PreparedStatement getAppInfoStmt;
+    public PreparedStatement getAppIdStmt;
     public Connection connection = null;
     private String insertAppPairSQL = "insert into Data.AppPair (appA,appB,support,label) values (?,?,?,?)";
     private String getAppPairSQL = "select * from Data.AppPair";
     private String getAppInfoSQL = "select * from Data.AppInfo where appId=?";
+    private String getAppIdSQL = "select appId from Data.AppInfo where rankType in ('topFreeFlowDown','topFreeFlowUp' ,'topPaidFlowDown' ,'topPaidFlowUp')";
 
     public MlDbController() {
         try {
@@ -29,6 +31,7 @@ public class MlDbController {
             insertAppPairStmt = connection.prepareStatement(insertAppPairSQL);
             getAppPairStmt = connection.prepareStatement(getAppPairSQL);
             getAppInfoStmt = connection.prepareStatement(getAppInfoSQL);
+            getAppIdStmt = connection.prepareStatement(getAppIdSQL);
         } catch (Exception e) {
             e.printStackTrace();
         }
