@@ -17,7 +17,7 @@ public class AppPairGenerator {
     private MlDbController mlDbController;
     private Set<Instance> oldPairSet = new HashSet<>();// 存储数据库中已有的记录
     private Set<String> oldIdSet = new HashSet<>(); // 数据库 apppair 表中已有的 id 记录
-    private Set<String> AppInfoIdSet=new HashSet<>();//从 appinfo 表中读取到的 id 记录集合
+    private Set<String> AppInfoIdSet = new HashSet<>();//从 appinfo 表中读取到的 id 记录集合
 
     public AppPairGenerator() {
         this.mlDbController = new MlDbController();
@@ -41,6 +41,19 @@ public class AppPairGenerator {
             mlDbController.insertAppPairStmt.executeUpdate();
             System.out.println(appA + "  " + appB + "  " + support + "  " + label);
 
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void exportToDb(Instance instance) {
+        try {
+            mlDbController.insertAppPairStmt.setString(1, instance.appA);
+            mlDbController.insertAppPairStmt.setString(2, instance.appB);
+            mlDbController.insertAppPairStmt.setInt(3, instance.support);
+            mlDbController.insertAppPairStmt.setString(4, instance.label);
+            mlDbController.insertAppPairStmt.executeUpdate();
+            System.out.println(instance.appA + "  " + instance.appB + "  " + instance.support + "  " + instance.label);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -71,9 +84,20 @@ public class AppPairGenerator {
         }
     }
 
+
+    //todo 新建一个id set, random Pick 的来源改为从 oldIdSet 与 appInfo Id Set 的差集
     public void normalPairBuilder() {
-        for (int i = 0; i < 10; i++) {
-            System.out.println(randomPickId());
+        for (int i = 0; i < 1; i++) {
+            String app1 = randomPickId();
+            String app2 = randomPickId();
+            if (app1.equals(app2))
+                continue;
+            Instance ins = new Instance(app1, app2);
+            if (!oldPairSet.contains(ins)) {
+                ins.support = 0;
+                ins.label = "normal";
+                exportToDb(ins);
+            }
         }
     }
 
