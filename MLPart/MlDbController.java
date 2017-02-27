@@ -17,11 +17,13 @@ public class MlDbController {
     public PreparedStatement getAppPairStmt;
     public PreparedStatement getAppInfoStmt;
     public PreparedStatement getAppIdStmt;
+    public PreparedStatement insertInstanceStmt;
     public Connection connection = null;
     private String insertAppPairSQL = "insert into Data.AppPair (appA,appB,support,label) values (?,?,?,?)";
     private String getAppPairSQL = "select * from Data.AppPair";
     private String getAppInfoSQL = "select * from Data.AppInfo where appId=?";
     private String getAppIdSQL = "select appId from Data.AppInfo where rankType in ('topFreeFlowDown','topFreeFlowUp' ,'topPaidFlowDown' ,'topPaidFlowUp')";
+    private String insertInstanceSql = "insert into Data.Instance (rves,rds,rfs,label) values (?,?,?,?)";
 
     public MlDbController() {
         try {
@@ -29,6 +31,7 @@ public class MlDbController {
             connection = DriverManager.getConnection(url, user, password);
             System.out.println("Connect Database Success");//connection test
             insertAppPairStmt = connection.prepareStatement(insertAppPairSQL);
+            insertInstanceStmt = connection.prepareStatement(insertInstanceSql);
             getAppPairStmt = connection.prepareStatement(getAppPairSQL);
             getAppInfoStmt = connection.prepareStatement(getAppInfoSQL);
             getAppIdStmt = connection.prepareStatement(getAppIdSQL);

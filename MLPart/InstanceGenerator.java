@@ -176,7 +176,6 @@ public class InstanceGenerator {
                     rves++;
 
             }
-
             //ranking
             Set<Date> rdateSetA = rankingDateMapA.keySet();
             Set<Date> rdateSetB = rankingDateMapB.keySet();
@@ -188,10 +187,24 @@ public class InstanceGenerator {
                     rfs++;
             }
 
-            if (rds != 0 || rves != 0 || rfs != 0)
-                System.out.println(appA + "  " + appB + "  " + rds + "  " + rves + "  " + rfs + "  " + ins.label);
+            exportInstanceToDb(rves, rds, rfs, ins.label);
+            System.out.println(ins.label + "  " + appA + "  " + appB + "  " + rds + "  " + rves + "  " + rfs);
+
         }
     }
+
+    public void exportInstanceToDb(int rves, int rds, int rfs, String label) {
+        try {
+            mlDbController.insertInstanceStmt.setInt(1, rves);
+            mlDbController.insertInstanceStmt.setInt(2, rds);
+            mlDbController.insertInstanceStmt.setInt(3, rfs);
+            mlDbController.insertInstanceStmt.setString(4, label);
+            mlDbController.insertInstanceStmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     private int approxEquals(Map<Date, Double> outerMap, Map<Date, Double> innerMap, Date date) {
         Double outerRateDiff;

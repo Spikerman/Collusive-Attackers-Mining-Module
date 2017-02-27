@@ -15,20 +15,24 @@ import java.util.Set;
 public class AppPairGenerator {
     private Set<Instance> appPairSet = new HashSet<>();
     private MlDbController mlDbController;
-    private Set<Instance> oldPairSet = new HashSet<>();// 存储数据库中已有的记录
-    private Set<String> oldIdSet = new HashSet<>(); // 数据库 apppair 表中已有的 id 记录
-    private Set<String> AppInfoIdSet = new HashSet<>();//从 appinfo 表中读取到的 id 记录集合
+    private Set<Instance> dbPairRecord = new HashSet<>();// 存储数据库中已有的记录
+    private Set<String> idsInAppPair = new HashSet<>(); // 数据库 apppair 表中已有的 id 记录
+    private Set<String> idsInAppInfo = new HashSet<>();//从 appinfo 表中读取到的 id 记录集合
+    private Set<String> allIdSet = new HashSet<>();
 
     public AppPairGenerator() {
         this.mlDbController = new MlDbController();
-        retrieveRecordFromDb();
-        retrieveAppIdFromDb();
+        getPairFromAppPair();
+        getIdFromAppInfo();
+        System.out.println(idsInAppInfo.size() + "  " + idsInAppPair.size());
+        allIdSet.addAll(idsInAppInfo);
+        allIdSet.addAll(idsInAppPair);
+        System.out.println(allIdSet.size());
     }
 
     public static void main(String args[]) {
         AppPairGenerator apg = new AppPairGenerator();
         apg.normalPairBuilder();
-        //apg.dataReader(1, 4);
 
     }
 
@@ -85,15 +89,14 @@ public class AppPairGenerator {
     }
 
 
-    //todo 新建一个id set, random Pick 的来源改为从 oldIdSet 与 appInfo Id Set 的差集
     public void normalPairBuilder() {
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 600; i++) {
             String app1 = randomPickId();
             String app2 = randomPickId();
             if (app1.equals(app2))
                 continue;
             Instance ins = new Instance(app1, app2);
-            if (!oldPairSet.contains(ins)) {
+            if (!dbPairRecord.contains(ins)) {
                 ins.support = 0;
                 ins.label = "normal";
                 exportToDb(ins);
@@ -101,7 +104,8 @@ public class AppPairGenerator {
         }
     }
 
-    public void retrieveRecordFromDb() {
+    //从 apppair 表获取所有记录
+    public void getPairFromAppPair() {
         ResultSet rs;
         try {
             rs = mlDbController.getAppPairStmt.executeQuery();
@@ -111,32 +115,35 @@ public class AppPairGenerator {
                 i.appB = rs.getString("appB");
                 i.support = rs.getInt("support");
                 i.label = rs.getString("label");
-                oldPairSet.add(i);
+                dbPairRecord.add(i);
+                idsInAppPair.add(i.appA);
+                idsInAppPair.add(i.appB);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("existed pair size: " + oldPairSet.size());
+        System.out.println("existed pair size: " + dbPairRecord.size());
     }
 
-    public void retrieveAppIdFromDb() {
+    //从 appinfo 表获取所有 id 的集合
+    public void getIdFromAppInfo() {
         ResultSet rs;
         try {
             rs = mlDbController.getAppIdStmt.executeQuery();
             while (rs.next()) {
                 String id = rs.getString("appId");
-                oldIdSet.add(id);
+                idsInAppInfo.add(id);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("符合条件 id 数： " + oldIdSet.size());
+        System.out.println("符合条件 id 数： " + idsInAppInfo.size());
     }
 
     public String randomPickId() {
-        int item = new Random().nextInt(oldIdSet.size());
+        int item = new Random().nextInt(allIdSet.size());
         int i = 0;
-        for (String id : oldIdSet) {
+        for (String id : allIdSet) {
             if (i == item)
                 return id;
             i++;
