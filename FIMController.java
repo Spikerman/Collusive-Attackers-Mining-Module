@@ -100,9 +100,9 @@ public class FIMController {
         ResultSet rs;
         try {
             statement = dbController.connection.createStatement();
-            System.out.println("start user data fetch...");
+            System.out.println("start user train fetch...");
             rs = statement.executeQuery(selectUserSql);
-            System.out.println("end user data fetch...");
+            System.out.println("end user train fetch...");
             int clusterId;
             String userId;
             while (rs.next()) {
@@ -129,9 +129,9 @@ public class FIMController {
         String sql = sqlGenerateForReview();
         try {
             statement = dbController.connection.createStatement();
-            System.out.println("start user data fetch...");
+            System.out.println("start user train fetch...");
             rs = statement.executeQuery(sql);
-            System.out.println("end user data fetch...");
+            System.out.println("end user train fetch...");
             String userId;
             String appId;
             while (rs.next()) {
@@ -185,9 +185,9 @@ public class FIMController {
         ResultSet rs;
         try {
             statement = dbController.connection.createStatement();
-            System.out.println(" start cluster data fetch...");
+            System.out.println(" start cluster train fetch...");
             rs = statement.executeQuery(selectClusterSql);
-            System.out.println(" end cluster data fetch...");
+            System.out.println(" end cluster train fetch...");
             String appId;
             int groupId;
             while (rs.next()) {
