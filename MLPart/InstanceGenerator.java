@@ -26,15 +26,13 @@ public class InstanceGenerator {
 
     public static void main(String args[]) {
         InstanceGenerator ig = new InstanceGenerator();
-        ig.retrieveFromDb();
-        ig.appMapBuilder();
-        ig.recordMapBuilder();
+        ig.getTrainPairFromDb();
         ig.analysis();
         System.out.println();
     }
 
-    //retrieve app pair record from AppPair Scheme
-    public void retrieveFromDb() {
+    //retrieve training app pair record from AppPair Scheme
+    public void getTrainPairFromDb() {
         ResultSet rs;
         try {
             rs = mlDbController.getAppPairStmt.executeQuery();
@@ -54,8 +52,7 @@ public class InstanceGenerator {
         System.out.println(appPairSet.size());
     }
 
-    //todo 建立HashMap<String,List<AppData>>
-    public void appMapBuilder() {
+    private void appMapBuilder() {
         ResultSet rs;
         try {
             for (String id : appIdSet) {
@@ -76,7 +73,6 @@ public class InstanceGenerator {
                     appData.averageUserRatingForCurrentVersion = Double.parseDouble(rs.getString("averageUserRatingForCurrentVersion"));
                     appData.date = DataFormat.timestampToMonthDayYear(rs.getTimestamp("date"));
 
-                    //todo 收集数据时 update 部分的筛选与处理有待进一步检查
                     if (!dateSet.contains(appData.date)) {
                         list.add(appData);
                     } else {
@@ -101,14 +97,14 @@ public class InstanceGenerator {
     }
 
     //
-    public void recordMapBuilder() {
+    private void recordMapBuilder() {
         Iterator iterator = appMap.entrySet().iterator();
         DateComparator dateComparator = new DateComparator();
         while (iterator.hasNext()) {
             Map.Entry entry = (Map.Entry) iterator.next();
             String appId = (String) entry.getKey();
             List<AppData> appList = (List) entry.getValue();
-            appList.sort(dateComparator);//todo comparator 进行了修改，注意
+            appList.sort(dateComparator);
             Map<Date, Double> rateDiffRecordMap = new TreeMap<>();
             Map<Date, Integer> reviewDiffRecordMap = new TreeMap<>();
             Map<Date, Integer> rankingTypeRecordMap = new TreeMap<>();
@@ -143,6 +139,8 @@ public class InstanceGenerator {
     }
 
     public void analysis() {
+        appMapBuilder();
+        recordMapBuilder();
         for (Instance ins : appPairSet) {
             int rds = 0;
             int rves = 0;
@@ -186,14 +184,13 @@ public class InstanceGenerator {
                 if (rankFloatA * rankFloatB > 0)
                     rfs++;
             }
-
-            exportInstanceToDb(rves, rds, rfs, ins.label);
+            exportTrainInsToDb(rves, rds, rfs, ins.label);
             System.out.println(ins.label + "  " + appA + "  " + appB + "  " + rds + "  " + rves + "  " + rfs);
 
         }
     }
 
-    public void exportInstanceToDb(int rves, int rds, int rfs, String label) {
+    public void exportTrainInsToDb(int rves, int rds, int rfs, String label) {
         try {
             mlDbController.insertInstanceStmt.setInt(1, rves);
             mlDbController.insertInstanceStmt.setInt(2, rds);
@@ -222,6 +219,5 @@ public class InstanceGenerator {
         }
         return count;
     }
-
 
 }
