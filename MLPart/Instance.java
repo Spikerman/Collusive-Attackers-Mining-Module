@@ -35,6 +35,12 @@ public class Instance {
         rfs = 0;
     }
 
+    public Instance(String appA, String appB, String label) {
+        this.label = label;
+        this.appA = appA;
+        this.appB = appB;
+    }
+
     public Instance() {
     }
 

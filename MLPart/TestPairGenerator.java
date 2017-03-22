@@ -9,9 +9,11 @@ import java.util.*;
  * Author: Spikerman
  * Created Date: 17/3/13
  */
+
+//生成用于测试的应用对
 public class TestPairGenerator {
     private static final int FREQUENCY = 14;
-    public Set<Instance> testPairSet = new HashSet<>();
+    private Set<Instance> testPairSet = new HashSet<>();
     private MlDbController mlDbController;
     private List<AppData> appDataRecordListForRank = new LinkedList<>();
     private Map<String, List<AppData>> appMapForRank = new HashMap<>();
@@ -19,28 +21,31 @@ public class TestPairGenerator {
 
     public TestPairGenerator() {
         mlDbController = new MlDbController();
+        spaCollect();
     }
 
     public static void main(String args[]) {
         TestPairGenerator tpg = new TestPairGenerator();
-        tpg.spaCollect();
-        tpg.pairSetGenerator();
+        tpg.generateTestPair();
+    }
+
+    public Set<Instance> getTestPairSet() {
+        return testPairSet;
     }
 
     //获得潜在刷榜应用
-    public void spaCollect() {
+    private void spaCollect() {
         getRankAppInfoFromDb();
         buildAppDataMapForRank();
     }
 
-    public void pairSetGenerator() {
+    public void generateTestPair() {
         List<String> appList = new ArrayList<>(rankAppIdPool);
         for (int i = 0; i < appList.size(); i++) {
             for (int j = i + 1; j < appList.size(); j++) {
                 String appA = appList.get(i);
                 String appB = appList.get(j);
-                testPairSet.add(new Instance(appA, appB));
-                System.out.println(appA + " " + appB);
+                testPairSet.add(new Instance(appA, appB, "undefined"));
             }
         }
         System.out.println("总数：" + testPairSet.size());

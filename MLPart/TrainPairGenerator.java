@@ -12,7 +12,9 @@ import java.util.Set;
  * Author: Spikerman < mail4spikerman@gmail.com >
  * Created Date: 17/2/21
  */
-public class AppPairGenerator {
+
+//生成用于训练的应用对，各应用对已明确标记是否为 collusive
+public class TrainPairGenerator {
     private Set<Instance> appPairSet = new HashSet<>();
     private MlDbController mlDbController;
     private Set<Instance> dbPairRecord = new HashSet<>();// 存储数据库中已有的记录
@@ -20,7 +22,7 @@ public class AppPairGenerator {
     private Set<String> idsInAppInfo = new HashSet<>();//从 appinfo 表中读取到的 id 记录集合
     private Set<String> allIdSet = new HashSet<>();
 
-    public AppPairGenerator() {
+    public TrainPairGenerator() {
         this.mlDbController = new MlDbController();
         getPairFromAppPair();
         getIdFromAppInfo();
@@ -31,7 +33,7 @@ public class AppPairGenerator {
     }
 
     public static void main(String args[]) {
-        AppPairGenerator apg = new AppPairGenerator();
+        TrainPairGenerator apg = new TrainPairGenerator();
         apg.normalPairBuilder();
 
     }

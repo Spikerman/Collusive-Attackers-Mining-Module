@@ -9,9 +9,11 @@ import java.util.*;
  * Author: Spikerman < mail4spikerman@gmail.com >
  * Created Date: 17/2/22
  */
+
+//输出 Instance 到数据库中，每个 Instance 包含应用的 ID 以及各相似度下的对应值
 public class InstanceGenerator {
-    public static int adjustDayDiff = 5;
-    private Set<Instance> appPairSet = new HashSet<>();
+    private int adjustDayDiff = 5;
+    private Set<Instance> instanceSet = new HashSet<>();
     private Set<String> appIdSet = new HashSet<>();
     private Map<String, List<AppData>> appMap = new HashMap<>();
     private Map<String, Map<Date, Double>> rateRecordMap = new HashMap<>();//日期对应评分变化值
@@ -27,12 +29,16 @@ public class InstanceGenerator {
     public static void main(String args[]) {
         InstanceGenerator ig = new InstanceGenerator();
         ig.getTrainPairFromDb();
-        ig.analysis();
+        ig.instanceAnalysis(false, "");
         System.out.println();
     }
 
+    public Set<Instance> getInstances() {
+        return instanceSet;
+    }
+
     //retrieve training app pair record from AppPair Scheme
-    public void getTrainPairFromDb() {
+    private void getTrainPairFromDb() {
         ResultSet rs;
         try {
             rs = mlDbController.getAppPairStmt.executeQuery();
@@ -42,15 +48,24 @@ public class InstanceGenerator {
                 i.appB = rs.getString("appB");
                 i.support = rs.getInt("support");
                 i.label = rs.getString("label");
-                appPairSet.add(i);
+                instanceSet.add(i);
                 appIdSet.add(i.appA);
                 appIdSet.add(i.appB);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println(appPairSet.size());
+        System.out.println(instanceSet.size());
     }
+
+    public void setTestPair(Set<Instance> entry) {
+        for (Instance ins : entry) {
+            instanceSet.add(ins);
+            appIdSet.add(ins.appA);
+            appIdSet.add(ins.appB);
+        }
+    }
+
 
     private void appMapBuilder() {
         ResultSet rs;
@@ -138,10 +153,11 @@ public class InstanceGenerator {
         }
     }
 
-    public void analysis() {
+    //计算各Instance中的相似度值
+    public void instanceAnalysis(boolean needExport, String db) {
         appMapBuilder();
         recordMapBuilder();
-        for (Instance ins : appPairSet) {
+        for (Instance ins : instanceSet) {
             int rds = 0;
             int rves = 0;
             int rfs = 0;
@@ -184,19 +200,41 @@ public class InstanceGenerator {
                 if (rankFloatA * rankFloatB > 0)
                     rfs++;
             }
-            exportTrainInsToDb(rves, rds, rfs, ins.label);
+            ins.rds = rds;
+            ins.rfs = rfs;
+            ins.rves = rves;
+            if (needExport) {
+                if (db.equals("train")) {
+                    exportTrainInsToDb(ins);
+                } else if (db.equals("test")) {
+                    exportTestInsToDb(ins);
+                } else
+                    System.out.println("wrong database");
+            }
             System.out.println(ins.label + "  " + appA + "  " + appB + "  " + rds + "  " + rves + "  " + rfs);
-
         }
     }
 
-    public void exportTrainInsToDb(int rves, int rds, int rfs, String label) {
+    private void exportTrainInsToDb(Instance instance) {
         try {
-            mlDbController.insertInstanceStmt.setInt(1, rves);
-            mlDbController.insertInstanceStmt.setInt(2, rds);
-            mlDbController.insertInstanceStmt.setInt(3, rfs);
-            mlDbController.insertInstanceStmt.setString(4, label);
-            mlDbController.insertInstanceStmt.executeUpdate();
+            mlDbController.insertTrainInsStmt.setInt(1, instance.rves);
+            mlDbController.insertTrainInsStmt.setInt(2, instance.rds);
+            mlDbController.insertTrainInsStmt.setInt(3, instance.rfs);
+            mlDbController.insertTrainInsStmt.setString(4, instance.label);
+            mlDbController.insertTrainInsStmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void exportTestInsToDb(Instance instance) {
+        try {
+            mlDbController.insertTestInsStmt.setInt(1, instance.rves);
+            mlDbController.insertTestInsStmt.setInt(2, instance.rds);
+            mlDbController.insertTestInsStmt.setInt(3, instance.rfs);
+            mlDbController.insertTestInsStmt.setString(4, instance.appA);
+            mlDbController.insertTestInsStmt.setString(5, instance.appB);
+            mlDbController.insertTestInsStmt.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
         }
