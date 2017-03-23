@@ -234,6 +234,7 @@ public class InstanceGenerator {
             mlDbController.insertTestInsStmt.setInt(3, instance.rfs);
             mlDbController.insertTestInsStmt.setString(4, instance.appA);
             mlDbController.insertTestInsStmt.setString(5, instance.appB);
+            mlDbController.insertTestInsStmt.setString(6, instance.label);
             mlDbController.insertTestInsStmt.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
