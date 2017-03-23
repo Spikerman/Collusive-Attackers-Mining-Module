@@ -9,12 +9,15 @@ import weka.core.converters.CSVLoader;
 import weka.filters.unsupervised.attribute.Remove;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Author: Spikerman
  * Created Date: 17/2/27
  */
 public class Classify {
+    public Set<Instance> collusivePairs = new HashSet<>();
     private Classifier classifier = new RandomForest();
     private Instances train;
     private Instances test;
@@ -26,7 +29,7 @@ public class Classify {
 
     public static void main(String args[]) {
         Classify c = new Classify();
-        c.trainClassifier();
+        c.classifyInstance();
     }
 
     private void loadTrainingData() {
@@ -52,7 +55,7 @@ public class Classify {
         }
     }
 
-    public void trainClassifier() {
+    public void classifyInstance() {
         try {
             classifier = new RandomForest();
             int[] indices = new int[]{3, 4};
@@ -62,11 +65,17 @@ public class Classify {
             fc.setFilter(rm);
             fc.setClassifier(classifier);
             fc.buildClassifier(train);
+            int nonCollusiveCount = 0;
             for (int i = 0; i < test.numInstances(); i++) {
                 double pred = fc.classifyInstance(test.instance(i));
-                if ((int) pred == 0)
-                    System.out.println(test.instance(i).value(2) + " " + test.instance(i).toString(3) + " " + test.instance(i).toString(4) + " " + pred);
+                if ((int) pred == 1) {
+                    collusivePairs.add(new Instance(test.instance(i).toString(3), test.instance(i).toString(4)));
+                } else {
+                    nonCollusiveCount++;
+                }
+                System.out.println(test.instance(i).toString(3) + " " + test.instance(i).toString(4) + " " + pred);
             }
+            System.out.println("collusive pair count: " + collusivePairs.size() + "  " + "     others: " + nonCollusiveCount);
         } catch (Exception e) {
             e.printStackTrace();
         }
