@@ -354,7 +354,6 @@ public class MFIMResult {
     }
 
 
-    //todo 函数功能待分析
     public void itemsetAnalysis(Map<Integer, Set<Set<String>>> itemsetMap) {
         for (Map.Entry entry : itemsetMap.entrySet()) {
             int key = (Integer) entry.getKey();

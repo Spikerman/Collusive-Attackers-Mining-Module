@@ -126,7 +126,7 @@ public class InstanceGenerator {
             int totalReviewAmount = 0;
             Set<Date> dateSet = new HashSet<>();
             for (int i = 1; i < appList.size(); i++) {
-                dateSet.add(appList.get(i).date);// todo 暂时记录真实的 date 数
+                dateSet.add(appList.get(i).date);
                 AppData nextDayAppData = appList.get(i);
                 AppData curDayAppData = appList.get(i - 1);
                 double rateDiff = nextDayAppData.getRateDiff(curDayAppData);

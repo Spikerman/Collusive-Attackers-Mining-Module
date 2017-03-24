@@ -5,6 +5,7 @@ import weka.classifiers.Evaluation;
 import weka.classifiers.meta.FilteredClassifier;
 import weka.classifiers.trees.RandomForest;
 import weka.core.Instances;
+import weka.core.Utils;
 import weka.core.converters.CSVLoader;
 import weka.filters.unsupervised.attribute.Remove;
 
@@ -68,13 +69,16 @@ public class Classify {
             int nonCollusiveCount = 0;
             for (int i = 0; i < test.numInstances(); i++) {
                 double pred = fc.classifyInstance(test.instance(i));
-                if ((int) pred == 1) {
-                    collusivePairs.add(new Instance(test.instance(i).toString(3), test.instance(i).toString(4)));
-                } else {
+                double dist[] = fc.distributionForInstance(test.instance(i));
+                if (dist[1] < 1) {
                     nonCollusiveCount++;
+                } else {
+                    collusivePairs.add(new Instance(test.instance(i).toString(3), test.instance(i).toString(4)));
                 }
-                System.out.println(test.instance(i).toString(3) + " " + test.instance(i).toString(4) + " " + pred);
+                //System.out.println(test.instance(i).toString(3) + " " + test.instance(i).toString(4) + " " + pred);
+                System.out.println(Utils.arrayToString(dist));
             }
+            //todo 分类结果目前 collusive 数量过多
             System.out.println("collusive pair count: " + collusivePairs.size() + "  " + "     others: " + nonCollusiveCount);
         } catch (Exception e) {
             e.printStackTrace();

@@ -9,7 +9,7 @@ import java.util.Random;
 import java.util.Set;
 
 /**
- * Author: Spikerman < mail4spikerman@gmail.com >
+ * Author: Spikerman
  * Created Date: 17/2/21
  */
 
