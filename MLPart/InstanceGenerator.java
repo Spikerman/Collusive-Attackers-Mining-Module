@@ -12,7 +12,7 @@ import java.util.*;
 
 //输出 Instance 到数据库中，每个 Instance 包含应用的 ID 以及各相似度下的对应值
 public class InstanceGenerator {
-    private int adjustDayDiff = 5;
+    private int adjustDayDiff = 3;
     private Set<Instance> instanceSet = new HashSet<>();
     private Set<String> appIdSet = new HashSet<>();
     private Map<String, List<AppData>> appMap = new HashMap<>();
@@ -55,7 +55,7 @@ public class InstanceGenerator {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println(instanceSet.size());
+        System.out.println("获取的 app pair 总数： " + instanceSet.size());
     }
 
     public void setTestPair(Set<Instance> entry) {
@@ -220,7 +220,9 @@ public class InstanceGenerator {
             mlDbController.insertTrainInsStmt.setInt(1, instance.rves);
             mlDbController.insertTrainInsStmt.setInt(2, instance.rds);
             mlDbController.insertTrainInsStmt.setInt(3, instance.rfs);
-            mlDbController.insertTrainInsStmt.setString(4, instance.label);
+            mlDbController.insertTrainInsStmt.setString(4, instance.appA);
+            mlDbController.insertTrainInsStmt.setString(5, instance.appB);
+            mlDbController.insertTrainInsStmt.setString(6, instance.label);
             mlDbController.insertTrainInsStmt.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();

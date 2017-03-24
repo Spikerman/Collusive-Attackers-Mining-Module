@@ -21,10 +21,10 @@ public class MlDbController {
     public PreparedStatement insertTestInsStmt;
     public Connection connection = null;
     private String insertAppPairSQL = "insert into Data.AppPair (appA,appB,support,label) values (?,?,?,?)";
-    private String getAppPairSQL = "select * from Data.AppPair";
+    private String getAppPairSQL = "select * from Data.AppPair where support=-1";
     private String getAppInfoSQL = "select * from Data.AppInfo where appId=?";
     private String getAppIdSQL = "select appId from Data.AppInfo where rankType in ('topFreeFlowDown','topFreeFlowUp' ,'topPaidFlowDown' ,'topPaidFlowUp')";
-    private String insertTrainInsSql = "insert into Data.TrainInstances (rves,rds,rfs,label) values (?,?,?,?)";
+    private String insertTrainInsSql = "insert into Data.TrainInstances (rves,rds,rfs,appA,appB,label) values (?,?,?,?,?,?)";
     private String insertTestInsSql = "insert into Data.TestInstances (rves,rds,rfs,appA,appB,label) values (?,?,?,?,?,?)";
 
     public MlDbController() {

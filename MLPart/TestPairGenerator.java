@@ -48,7 +48,7 @@ public class TestPairGenerator {
                 testPairSet.add(new Instance(appA, appB, "undefined"));
             }
         }
-        System.out.println("总数：" + testPairSet.size());
+        System.out.println("潜在刷榜应用内的应用对总数：" + testPairSet.size());
     }
 
     private void getRankAppInfoFromDb() {
@@ -85,7 +85,7 @@ public class TestPairGenerator {
                 appMapForRank.put(appData.appId, newList);
             }
         }
-        System.out.println("数据库 App 数 : " + appMapForRank.size());
+        System.out.println("包含 App 总数 : " + appMapForRank.size());
         Iterator iterator = appMapForRank.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry entry = (Map.Entry) iterator.next();
