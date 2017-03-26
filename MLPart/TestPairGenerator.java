@@ -12,7 +12,7 @@ import java.util.*;
 
 //生成用于测试的应用对
 public class TestPairGenerator {
-    private static final int FREQUENCY = 14;
+    private static final int FREQUENCY = 11;
     private Set<Instance> testPairSet = new HashSet<>();
     private MlDbController mlDbController;
     private List<AppData> appDataRecordListForRank = new LinkedList<>();

@@ -12,7 +12,7 @@ import java.util.*;
 
 //输出 Instance 到数据库中，每个 Instance 包含应用的 ID 以及各相似度下的对应值
 public class InstanceGenerator {
-    private int adjustDayDiff = 3;
+    private int adjustDayDiff = 5;
     private Set<Instance> instanceSet = new HashSet<>();
     private Set<String> appIdSet = new HashSet<>();
     private Map<String, List<AppData>> appMap = new HashMap<>();
@@ -29,7 +29,7 @@ public class InstanceGenerator {
     public static void main(String args[]) {
         InstanceGenerator ig = new InstanceGenerator();
         ig.getTrainPairFromDb();
-        ig.instanceAnalysis(false, "");
+        ig.instanceAnalysis(true, "test");
         System.out.println();
     }
 
@@ -171,7 +171,7 @@ public class InstanceGenerator {
             Map<Date, Integer> rankingDateMapB = rankingRecordMap.get(appB);
             Set<Date> dateSetA = rateDateMapA.keySet();
             Set<Date> dateSetB = rateDateMapB.keySet();
-            Set<Date> shareDateSet = (Set) Sets.intersection(dateSetA, dateSetB);
+            Set<Date> shareDateSet = Sets.intersection(dateSetA, dateSetB);
             for (Date date : shareDateSet) {
                 //rating
                 Double rateDiffA = rateDateMapA.get(date);
@@ -193,7 +193,7 @@ public class InstanceGenerator {
             //ranking
             Set<Date> rdateSetA = rankingDateMapA.keySet();
             Set<Date> rdateSetB = rankingDateMapB.keySet();
-            Set<Date> shareDateSet2 = (Set) Sets.intersection(rdateSetA, rdateSetB);
+            Set<Date> shareDateSet2 = Sets.intersection(rdateSetA, rdateSetB);
             for (Date date : shareDateSet2) {
                 int rankFloatA = rankingDateMapA.get(date);
                 int rankFloatB = rankingDateMapB.get(date);

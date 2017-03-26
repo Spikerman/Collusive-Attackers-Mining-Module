@@ -11,7 +11,7 @@ import java.util.*;
 /**
  * Created by chenhao on 5/28/16.
  */
-public class MFIMResult {
+public class MFIM {
 
     //存储8个cluster 的所有 itemset 中的 app 总和的集合
     public static Set<String> resultAppSet = new HashSet<>();
@@ -24,7 +24,7 @@ public class MFIMResult {
     Set<String> userSet = new HashSet<>();
     Set<String> testAppSet = new HashSet<>();
 
-    public MFIMResult() {
+    public MFIM() {
         System.out.println("=======================  FP-Max STATS =======================");
         fimController = new FIMController(dbController);
         fimController.loadClusterMapFromDb();
@@ -32,34 +32,19 @@ public class MFIMResult {
     }
 
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws Exception {
         int clusterId = 1;
-        int support = 3;
-        boolean readFromTxt = false;
-        boolean isSingleFile = false;
-        MFIMResult result = new MFIMResult();
-        String inputFile = "sourceX/result%d.txt";
+        int support = 4;
+        MFIM fim = new MFIM();
+        fim.itemsetMining(clusterId, support);
+        //fim.resultAnalysis(clusterId, support);
+    }
 
+
+    public void itemsetMining(int clusterId, int support) {
+        String inputFile = "sourceX/result%d.txt";
         inputFile = String.format(inputFile, clusterId);
-        if (isSingleFile) {
-            if (readFromTxt) {
-                try {
-                    result.resultAnalysis(clusterId, support);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            } else {
-                result.fimStart(inputFile, clusterId, support, 20);
-            }
-        } else {
-            try {
-                for (int i = 1; i <= 8; i++) {
-                    result.resultAnalysis(i, support);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        fimStart(inputFile, clusterId, support, 20);
     }
 
     //unused
@@ -83,7 +68,6 @@ public class MFIMResult {
 
         Itemsets itemsets = algoFPGrowth.getPatterns();
         List<List<Itemset>> levels = itemsets.levels;
-
         int levelCount = 0;
         // for each level (a level is a set of itemsets having the same number of items)
         for (List<Itemset> level : levels) {
@@ -168,7 +152,7 @@ public class MFIMResult {
     }
 
     //从数据库中直接读取各 cluster 的数据，然后开始挖掘 MFIM
-    public void fimStart(String input, int clusterId, int minAppNum, int minUserGroupSize) {
+    private void fimStart(String input, int clusterId, int minAppNum, int minUserGroupSize) {
         userSet.clear();
         AlgoFPMax algoFPMax = new AlgoFPMax(dbController, fimController.appClusterMap.get(clusterId));
         try {
@@ -194,7 +178,7 @@ public class MFIMResult {
     }
 
     //从 TXT 文件中读取最终结果，然后对结果进行解析并输出【目前正在用此方法】
-    public void resultAnalysis(int clusterId, int support) throws Exception {
+    private void resultAnalysis(int clusterId, int support) throws Exception {
         userSet.clear();
         double avgItemsetSize = 0;
         int totalItemsetSize = 0;
@@ -265,7 +249,7 @@ public class MFIMResult {
 
 
     //分析日期相关
-    public Set<Date> dateAnalysis(String[] userArray, String[] appArray) {
+    private Set<Date> dateAnalysis(String[] userArray, String[] appArray) {
         StringBuffer sqlHead = new StringBuffer("SELECT * FROM Data.Review Where userId in ");
         StringBuffer sqlTail = new StringBuffer("and appId in");
         StringBuffer sqlTail2 = new StringBuffer("and appId =");

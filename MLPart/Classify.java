@@ -5,6 +5,7 @@ import weka.classifiers.Evaluation;
 import weka.classifiers.meta.FilteredClassifier;
 import weka.classifiers.trees.RandomForest;
 import weka.core.Instances;
+import weka.core.Utils;
 import weka.core.converters.CSVLoader;
 import weka.filters.unsupervised.attribute.Remove;
 
@@ -68,18 +69,17 @@ public class Classify {
             for (int i = 0; i < test.numInstances(); i++) {
                 double pred = fc.classifyInstance(test.instance(i));
                 double dist[] = fc.distributionForInstance(test.instance(i));
-                if ((int) pred == 1) {
+                if (dist[1] > 0.2) {
                     collusivePairs.add(new Instance(test.instance(i).toString(3), test.instance(i).toString(4)));
                 } else {
                     nonCollusiveCount++;
                 }
-                //System.out.println(test.instance(i).toString(3) + " " + test.instance(i).toString(4) + " " + pred);
                 System.out.println(test.instance(i).value(0) + "  "
                         + test.instance(i).value(1) + "  "
                         + test.instance(i).value(2) + "  "
-                        + pred);
+                        + Utils.arrayToString(dist));
             }
-            System.out.println("识别出的可疑目标对总数: " + collusivePairs.size() + "  " + "     普通应用数: " + nonCollusiveCount);
+            System.out.println("collusive app pair 数: " + collusivePairs.size() + "  " + "     normal app pair 数: " + nonCollusiveCount);
         } catch (Exception e) {
             e.printStackTrace();
         }

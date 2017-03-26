@@ -8,31 +8,30 @@ import java.util.*;
  * Author: Spikerman
  * Created Date: 17/3/24
  */
-public class ClusterBuild {
+public class ClusterGenerator {
     public Set<Set<String>> clusterSet = new HashSet<>();// set of Targeted App Cluster
     private MlDbController mlDbController = new MlDbController();
     private Map<String, Set<String>> appClusterMap = new HashMap<>();
     private Set<Instance> collusivePairs;
 
-    public ClusterBuild() {
+    public ClusterGenerator() {
         Classify classifier = new Classify();
         classifier.classifyInstance();
         collusivePairs = classifier.collusivePairs;
     }
 
     public static void main(String args[]) {
-        int clusterLimit = 25;
-        ClusterBuild cb = new ClusterBuild();
+        int clusterLimit = 30;
+        ClusterGenerator cb = new ClusterGenerator();
         cb.clusterMapBuild();
         System.out.println("递归合并前candidate cluster数 : " + cb.appClusterMap.size());
-        cb.clusterCombine(0.8);
+        cb.clusterCombine(0.6);
         System.out.println("递归合并后candidate cluster数 : " + cb.appClusterMap.size());
         System.out.println("========================= Candidate Cluster ================================ ");
         System.out.println("candidate size 限制 : " + clusterLimit);
         Print.printEachGroupSize(cb.appClusterMap, clusterLimit);
         cb.buildAppClusterSet(clusterLimit);
         cb.exportToRemoteDb();
-
     }
 
     public void clusterMapBuild() {
