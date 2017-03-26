@@ -150,9 +150,7 @@ public class FIMController {
         Statement statement;
         ResultSet rs;
         Set<String> appSet = appClusterMap.get(cluster);
-
         String sql = sqlGenerateForAppGroupReview(appSet);
-
         try {
             statement = dbController.connection.createStatement();
             rs = statement.executeQuery(sql);

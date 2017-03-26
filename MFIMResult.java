@@ -33,21 +33,13 @@ public class MFIMResult {
 
 
     public static void main(String args[]) {
-        int clusterId = 3;
-        int support = 4;
-        boolean readFromTxt = true;
+        int clusterId = 1;
+        int support = 3;
+        boolean readFromTxt = false;
         boolean isSingleFile = false;
         MFIMResult result = new MFIMResult();
-        String inputFile = "sourceX/result%d.txt";// resultX 内数据是除去第7个cluster后余下的8个cluster
-        String outPutFile = "appList/appList%d.txt";//输出 resultAppSet 的结果
-        //itemsetAppFileName unused now
-//        String itemsetAppFileName = "appList/itemsetApp%d.txt";
-//        itemsetAppFileName = String.format(itemsetAppFileName, support);
-//        try {
-//            bufferedWriter = new BufferedWriter(new FileWriter(itemsetAppFileName));
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
+        String inputFile = "sourceX/result%d.txt";
+
         inputFile = String.format(inputFile, clusterId);
         if (isSingleFile) {
             if (readFromTxt) {
@@ -64,16 +56,6 @@ public class MFIMResult {
                 for (int i = 1; i <= 8; i++) {
                     result.resultAnalysis(i, support);
                 }
-//                outPutFile = String.format(outPutFile, support);
-//                BufferedWriter bw = new BufferedWriter(new FileWriter(outPutFile));
-//                for (String appId : resultAppSet) {
-//                    bw.write(appId);
-//                    bw.newLine();
-//                }
-//                bw.flush();
-//                bw.close();
-//                System.out.println("写入ok");
-//                System.out.println("总app数" + resultAppSet.size());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -185,7 +167,7 @@ public class MFIMResult {
 
     }
 
-    //从数据库中直接读取各 cluster 的数据，然后开始 MFIM
+    //从数据库中直接读取各 cluster 的数据，然后开始挖掘 MFIM
     public void fimStart(String input, int clusterId, int minAppNum, int minUserGroupSize) {
         userSet.clear();
         AlgoFPMax algoFPMax = new AlgoFPMax(dbController, fimController.appClusterMap.get(clusterId));

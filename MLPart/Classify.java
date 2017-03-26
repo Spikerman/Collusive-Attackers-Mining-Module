@@ -18,7 +18,6 @@ import java.util.Set;
  */
 public class Classify {
     public Set<Instance> collusivePairs = new HashSet<>();
-    private Classifier classifier = new RandomForest();
     private Instances train;
     private Instances test;
 
@@ -57,7 +56,7 @@ public class Classify {
 
     public void classifyInstance() {
         try {
-            classifier = new RandomForest();
+            Classifier classifier = new RandomForest();
             int[] indices = new int[]{3, 4};
             Remove rm = new Remove();
             rm.setAttributeIndicesArray(indices);
@@ -80,7 +79,6 @@ public class Classify {
                         + test.instance(i).value(2) + "  "
                         + pred);
             }
-            //todo 分类结果目前 collusive 数量过多
             System.out.println("识别出的可疑目标对总数: " + collusivePairs.size() + "  " + "     普通应用数: " + nonCollusiveCount);
         } catch (Exception e) {
             e.printStackTrace();

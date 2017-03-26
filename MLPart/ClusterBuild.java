@@ -2,16 +2,15 @@ package MLPart;
 
 import com.google.common.collect.Sets;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Author: Spikerman
  * Created Date: 17/3/24
  */
 public class ClusterBuild {
+    public Set<Set<String>> clusterSet = new HashSet<>();// set of Targeted App Cluster
+    private MlDbController mlDbController = new MlDbController();
     private Map<String, Set<String>> appClusterMap = new HashMap<>();
     private Set<Instance> collusivePairs;
 
@@ -22,9 +21,18 @@ public class ClusterBuild {
     }
 
     public static void main(String args[]) {
+        int clusterLimit = 25;
         ClusterBuild cb = new ClusterBuild();
         cb.clusterMapBuild();
-        System.out.print("haha");
+        System.out.println("递归合并前candidate cluster数 : " + cb.appClusterMap.size());
+        cb.clusterCombine(0.8);
+        System.out.println("递归合并后candidate cluster数 : " + cb.appClusterMap.size());
+        System.out.println("========================= Candidate Cluster ================================ ");
+        System.out.println("candidate size 限制 : " + clusterLimit);
+        Print.printEachGroupSize(cb.appClusterMap, clusterLimit);
+        cb.buildAppClusterSet(clusterLimit);
+        cb.exportToRemoteDb();
+
     }
 
     public void clusterMapBuild() {
@@ -94,6 +102,46 @@ public class ClusterBuild {
         double unionSize = unionSet.size();
         double intersectionSize = intersectionSet.size();
         return (intersectionSize / unionSize) >= rate;
+    }
+
+    private void exportClusterToRemoteDb(int clusterId, String appId) {
+        try {
+            mlDbController.insertCCStmt.setInt(1, clusterId);
+            mlDbController.insertCCStmt.setString(2, appId);
+            mlDbController.insertCCStmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void exportToRemoteDb() {
+        System.out.println("============== Export To DataBase ============");
+        Iterator clusterIterator = clusterSet.iterator();
+        Iterator appIdIterator;
+        int clusterId = 1;
+        while (clusterIterator.hasNext()) {
+            Set idSet = (Set) clusterIterator.next();
+            appIdIterator = idSet.iterator();
+            while (appIdIterator.hasNext()) {
+                String appId = (String) appIdIterator.next();
+                exportClusterToRemoteDb(clusterId, appId);
+            }
+            clusterId++;
+        }
+        System.out.println("============== Export End ============");
+    }
+
+    public void buildAppClusterSet(int size) {
+        Object[] groupArray = appClusterMap.entrySet().toArray();
+        int totalCount = 0;
+        for (int i = 0; i < groupArray.length; i++) {
+            Map.Entry entry = (Map.Entry) groupArray[i];
+            Set<String> ids = (Set) entry.getValue();
+            totalCount += ids.size();
+            if (ids.size() >= size)
+                clusterSet.add(ids);
+        }
+        System.out.println("avg cluster size : " + (float) totalCount / (float) groupArray.length);
     }
 
 
