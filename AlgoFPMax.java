@@ -144,7 +144,7 @@ public class AlgoFPMax {
         // set output file
         String fileName = "Cluster%dSupport%d.txt";
 
-        fileName = String.format(fileName, clusterId, (int)miniReviewApp);
+        fileName = String.format(fileName, clusterId, (int) miniReviewApp);
         fimWriter = new BufferedWriter(new FileWriter(fileName));
 
         // (1) PREPROCESSING: Initial database scan to determine the frequency of each item

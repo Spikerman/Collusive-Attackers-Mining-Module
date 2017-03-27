@@ -69,7 +69,7 @@ public class Classify {
             for (int i = 0; i < test.numInstances(); i++) {
                 double pred = fc.classifyInstance(test.instance(i));
                 double dist[] = fc.distributionForInstance(test.instance(i));
-                if (dist[1] > 0.2) {
+                if ((int) pred == 1) {
                     collusivePairs.add(new Instance(test.instance(i).toString(3), test.instance(i).toString(4)));
                 } else {
                     nonCollusiveCount++;
@@ -77,7 +77,7 @@ public class Classify {
                 System.out.println(test.instance(i).value(0) + "  "
                         + test.instance(i).value(1) + "  "
                         + test.instance(i).value(2) + "  "
-                        + Utils.arrayToString(dist));
+                        + pred);
             }
             System.out.println("collusive app pair 数: " + collusivePairs.size() + "  " + "     normal app pair 数: " + nonCollusiveCount);
         } catch (Exception e) {

@@ -33,8 +33,8 @@ public class MFIM {
 
 
     public static void main(String args[]) throws Exception {
-        int clusterId = 1;
-        int support = 4;
+        int clusterId = 2;
+        int support = 5;
         MFIM fim = new MFIM();
         fim.itemsetMining(clusterId, support);
         //fim.resultAnalysis(clusterId, support);

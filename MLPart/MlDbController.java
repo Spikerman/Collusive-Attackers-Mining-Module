@@ -20,7 +20,8 @@ public class MlDbController {
     public PreparedStatement insertTrainInsStmt;
     public PreparedStatement insertTestInsStmt;
     public Connection connection = null;
-    public PreparedStatement insertCCStmt = null;
+    public PreparedStatement insertCCStmt;
+    public PreparedStatement selectAppStmt;
     private String insertCandidateClusterSql = "insert into Data.CandidateCluster (clusterId,appId) values (?,?)";
     private String insertAppPairSQL = "insert into Data.AppPair (appA,appB,support,label) values (?,?,?,?)";
     private String getAppPairSQL = "select * from Data.AppPair where support=-1";
@@ -28,7 +29,7 @@ public class MlDbController {
     private String getAppIdSQL = "select appId from Data.AppInfo where rankType in ('topFreeFlowDown','topFreeFlowUp' ,'topPaidFlowDown' ,'topPaidFlowUp')";
     private String insertTrainInsSql = "insert into Data.TrainInstances (rves,rds,rfs,appA,appB,label) values (?,?,?,?,?,?)";
     private String insertTestInsSql = "insert into Data.TestInstances (rves,rds,rfs,appA,appB,label) values (?,?,?,?,?,?)";
-
+    private String selectAppSql = "select distinct appid from Data.Review";
 
     public MlDbController() {
         try {
@@ -42,6 +43,7 @@ public class MlDbController {
             getAppInfoStmt = connection.prepareStatement(getAppInfoSQL);
             getAppIdStmt = connection.prepareStatement(getAppIdSQL);
             insertCCStmt = connection.prepareStatement(insertCandidateClusterSql);
+            selectAppStmt = connection.prepareStatement(selectAppSql);
         } catch (Exception e) {
             e.printStackTrace();
         }

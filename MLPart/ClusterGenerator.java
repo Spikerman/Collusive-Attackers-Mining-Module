@@ -21,7 +21,7 @@ public class ClusterGenerator {
     }
 
     public static void main(String args[]) {
-        int clusterLimit = 30;
+        int clusterLimit = 25;
         ClusterGenerator cb = new ClusterGenerator();
         cb.clusterMapBuild();
         System.out.println("递归合并前candidate cluster数 : " + cb.appClusterMap.size());
@@ -31,7 +31,8 @@ public class ClusterGenerator {
         System.out.println("candidate size 限制 : " + clusterLimit);
         Print.printEachGroupSize(cb.appClusterMap, clusterLimit);
         cb.buildAppClusterSet(clusterLimit);
-        cb.exportToRemoteDb();
+        //cb.exportToLocalDb();
+        //todo 新增 exportToRemoteDb 函数
     }
 
     public void clusterMapBuild() {
@@ -113,8 +114,8 @@ public class ClusterGenerator {
         }
     }
 
-    public void exportToRemoteDb() {
-        System.out.println("============== Export To DataBase ============");
+    public void exportToLocalDb() {
+        System.out.println("============== Export To Local DataBase ============");
         Iterator clusterIterator = clusterSet.iterator();
         Iterator appIdIterator;
         int clusterId = 1;

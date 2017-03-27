@@ -12,16 +12,19 @@ import java.util.*;
 
 //生成用于测试的应用对
 public class TestPairGenerator {
-    private static final int FREQUENCY = 11;
+    private static final int FREQUENCY = 14;
     private Set<Instance> testPairSet = new HashSet<>();
     private MlDbController mlDbController;
     private List<AppData> appDataRecordListForRank = new LinkedList<>();
     private Map<String, List<AppData>> appMapForRank = new HashMap<>();
     private Set<String> rankAppIdPool = new HashSet<>();
+    private Set<String> reviewAppSet = new HashSet<>();//review table 中的 app 数
 
     public TestPairGenerator() {
         mlDbController = new MlDbController();
-        spaCollect();
+        //spaCollect();
+        spaInReviewTable();
+        //比较 spa 获得的应用数与数据库中 review table 中的应用数的差异 finished
     }
 
     public static void main(String args[]) {
@@ -33,10 +36,25 @@ public class TestPairGenerator {
         return testPairSet;
     }
 
-    //获得潜在刷榜应用
+    //获得潜在刷榜应用 通过计算排名波动频率
     private void spaCollect() {
         getRankAppInfoFromDb();
         buildAppDataMapForRank();
+        System.out.println("不包含的应用");
+        int count = 0;
+        for (String app : appMapForRank.keySet()) {
+            if (!reviewAppSet.contains(app)) {
+                System.out.println(app);
+                count++;
+            }
+        }
+        System.out.println("不包含的应用数： " + count);
+    }
+
+    //获得潜在刷榜应用 直接通过 review table
+    private void spaInReviewTable() {
+        getAppsFromReviewTable();
+        rankAppIdPool = reviewAppSet;
     }
 
     public void generateTestPair() {
@@ -73,6 +91,20 @@ public class TestPairGenerator {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    private void getAppsFromReviewTable() {
+        ResultSet rs;
+        try {
+            rs = mlDbController.selectAppStmt.executeQuery();
+            while (rs.next()) {
+                String appid = rs.getString("appid");
+                reviewAppSet.add(appid);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("review table 包含应用总数: " + reviewAppSet.size());
     }
 
     private void buildAppDataMapForRank() {
