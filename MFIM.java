@@ -33,18 +33,18 @@ public class MFIM {
 
 
     public static void main(String args[]) throws Exception {
-        int clusterId = 2;
-        int support = 5;
+        int clusterId = Integer.valueOf(args[0]);
+        int support = Integer.valueOf(args[1]);
+        int minGroupSize = Integer.valueOf(args[2]);
         MFIM fim = new MFIM();
-        fim.itemsetMining(clusterId, support);
+        fim.itemsetMining(clusterId, support, minGroupSize);
         //fim.resultAnalysis(clusterId, support);
     }
 
-
-    public void itemsetMining(int clusterId, int support) {
+    public void itemsetMining(int clusterId, int support, int minGroupSize) {
         String inputFile = "sourceX/result%d.txt";
         inputFile = String.format(inputFile, clusterId);
-        fimStart(inputFile, clusterId, support, 20);
+        fimStart(inputFile, clusterId, support, minGroupSize);
     }
 
     //unused

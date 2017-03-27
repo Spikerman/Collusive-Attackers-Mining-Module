@@ -11,6 +11,7 @@ import java.util.*;
 public class ClusterGenerator {
     public Set<Set<String>> clusterSet = new HashSet<>();// set of Targeted App Cluster
     private MlDbController mlDbController = new MlDbController();
+    private RemoteDbController remoteDbController = new RemoteDbController();
     private Map<String, Set<String>> appClusterMap = new HashMap<>();
     private Set<Instance> collusivePairs;
 
@@ -21,7 +22,7 @@ public class ClusterGenerator {
     }
 
     public static void main(String args[]) {
-        int clusterLimit = 25;
+        int clusterLimit = 20;
         ClusterGenerator cb = new ClusterGenerator();
         cb.clusterMapBuild();
         System.out.println("递归合并前candidate cluster数 : " + cb.appClusterMap.size());
@@ -32,7 +33,7 @@ public class ClusterGenerator {
         Print.printEachGroupSize(cb.appClusterMap, clusterLimit);
         cb.buildAppClusterSet(clusterLimit);
         //cb.exportToLocalDb();
-        //todo 新增 exportToRemoteDb 函数
+        //cb.exportToRemoteDb();
     }
 
     public void clusterMapBuild() {
@@ -104,7 +105,7 @@ public class ClusterGenerator {
         return (intersectionSize / unionSize) >= rate;
     }
 
-    private void exportClusterToRemoteDb(int clusterId, String appId) {
+    private void exportClusterToLocalDb(int clusterId, String appId) {
         try {
             mlDbController.insertCCStmt.setInt(1, clusterId);
             mlDbController.insertCCStmt.setString(2, appId);
@@ -114,8 +115,35 @@ public class ClusterGenerator {
         }
     }
 
+    public void exportClusterToRemoteDb(int clusterId, String appId) {
+        try {
+            remoteDbController.insertCCStmt.setInt(1, clusterId);
+            remoteDbController.insertCCStmt.setString(2, appId);
+            remoteDbController.insertCCStmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void exportToLocalDb() {
-        System.out.println("============== Export To Local DataBase ============");
+        System.out.println("============== Export To Local Database ============");
+        Iterator clusterIterator = clusterSet.iterator();
+        Iterator appIdIterator;
+        int clusterId = 1;
+        while (clusterIterator.hasNext()) {
+            Set idSet = (Set) clusterIterator.next();
+            appIdIterator = idSet.iterator();
+            while (appIdIterator.hasNext()) {
+                String appId = (String) appIdIterator.next();
+                exportClusterToLocalDb(clusterId, appId);
+            }
+            clusterId++;
+        }
+        System.out.println("============== Export End ============");
+    }
+
+    public void exportToRemoteDb() {
+        System.out.println("============== Export To Remote Database ============");
         Iterator clusterIterator = clusterSet.iterator();
         Iterator appIdIterator;
         int clusterId = 1;
@@ -130,6 +158,7 @@ public class ClusterGenerator {
         }
         System.out.println("============== Export End ============");
     }
+
 
     public void buildAppClusterSet(int size) {
         Object[] groupArray = appClusterMap.entrySet().toArray();
