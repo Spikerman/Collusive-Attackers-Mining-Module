@@ -33,12 +33,12 @@ public class MFIM {
 
 
     public static void main(String args[]) throws Exception {
-        int clusterId = Integer.valueOf(args[0]);
-        int support = Integer.valueOf(args[1]);
-        int minGroupSize = Integer.valueOf(args[2]);
+        int clusterId = 1;
+        int support = 3;
+        int minGroupSize = 5;
         MFIM fim = new MFIM();
-        fim.itemsetMining(clusterId, support, minGroupSize);
-        //fim.resultAnalysis(clusterId, support);
+        //fim.itemsetMining(clusterId, support, minGroupSize);
+        fim.resultAnalysis(clusterId, support);
     }
 
     public void itemsetMining(int clusterId, int support, int minGroupSize) {

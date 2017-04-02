@@ -22,6 +22,8 @@ public class DbController {
             insertAppPairStmt = connection.prepareStatement(insertAppPair);
         } catch (Exception e) {
             e.printStackTrace();
+
+
         }
     }
 
