@@ -111,7 +111,7 @@ public class InstanceCalculator {
 
     }
 
-    //
+
     private void recordMapBuilder() {
         Iterator iterator = appMap.entrySet().iterator();
         DateComparator dateComparator = new DateComparator();

@@ -13,7 +13,7 @@ import java.util.*;
  */
 public class MFIM {
 
-    //存储8个cluster 的所有 itemset 中的 app 总和的集合
+    //存储11个cluster 的所有 itemset 中的 app 总和的集合
     public static Set<String> resultAppSet = new HashSet<>();
     static BufferedWriter bufferedWriter;
     public int ccMapSize = 0;
@@ -33,12 +33,12 @@ public class MFIM {
 
 
     public static void main(String args[]) throws Exception {
-        int clusterId = 1;
-        int support = 3;
+        int clusterId = 11;
+        int support = 5;
         int minGroupSize = 5;
         MFIM fim = new MFIM();
-        //fim.itemsetMining(clusterId, support, minGroupSize);
-        fim.resultAnalysis(clusterId, support);
+        fim.itemsetMining(clusterId, support, minGroupSize);
+        //fim.resultAnalysis(clusterId, support);
     }
 
     public void itemsetMining(int clusterId, int support, int minGroupSize) {
@@ -210,20 +210,9 @@ public class MFIM {
             }
 
             System.out.println();
-
-//            Set<Date> dateSet = dateAnalysis(userIdArray, appIdArray);
-//            System.out.print("user group size : " + userIdArray.length + " date : ");
-//            for (Date date : dateSet) {
-//                System.out.print(date + " ");
-//            }
-//
-//            System.out.println();
-
             coreviewAppNum = appIdArray.length;
             itemsetCount++;
         }
-
-
         int coverAppCount = coverAppSet.size();
         int clusterSize = fimController.appClusterMap.get(clusterId).size();
         double appPercentage = (double) coverAppCount / (double) clusterSize;

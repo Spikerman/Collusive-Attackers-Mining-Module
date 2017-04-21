@@ -22,7 +22,7 @@ public class ClusterGenerator {
     }
 
     public static void main(String args[]) {
-        int clusterLimit = 20;
+        int clusterLimit = 25;
         ClusterGenerator cb = new ClusterGenerator();
         cb.clusterMapBuild();
         System.out.println("递归合并前candidate cluster数 : " + cb.appClusterMap.size());
